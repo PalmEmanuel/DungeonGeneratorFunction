@@ -6,9 +6,17 @@ namespace PipeHow.DungeonGenerator.Models
 {
     public enum TileType
     {
-        Empty = '#',
-        Floor = 'F',
+        // Different whitespace between empty and floor needed
+        Empty = '　',
+        Floor = ' ',
         Wall = 'W',
+        WallVertical = '│',
+        WallHorizontal = '─',
+        WallCorner = '┼',
+        WallCornerUpperRight = '┐',
+        WallCornerUpperLeft = '┌',
+        WallCornerLowerRight = '┘',
+        WallCornerLowerLeft = '└',
         Door = 'D'
     }
 

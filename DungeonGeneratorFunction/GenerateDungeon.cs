@@ -16,6 +16,7 @@ namespace PipeHow.DungeonGenerator
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
+            // http://roguebasin.roguelikedevelopment.org/index.php?title=Dungeon-Building_Algorithm
             IDungeon dungeon = Dungeon.CreateDungeon();
             string responseMessage = dungeon.ToString();
 
