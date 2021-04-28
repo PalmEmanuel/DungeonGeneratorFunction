@@ -7,12 +7,16 @@ namespace PipeHow.DungeonGenerator.Models
     public enum TileType
     {
         // Different whitespace between empty and floor needed
-        Empty = '　',
+        Empty = 'X',
         Floor = ' ',
         Wall = 'W',
         WallVertical = '│',
         WallHorizontal = '─',
-        WallCorner = '┼',
+        WallCross = '┼',
+        WallVerticalSeparatorLeft = '┤',
+        WallVerticalSeparatorRight = '├',
+        WallHorizontalSeparatorUp = '┴',
+        WallHorizontalSeparatorDown = '┬',
         WallCornerUpperRight = '┐',
         WallCornerUpperLeft = '┌',
         WallCornerLowerRight = '┘',
@@ -20,7 +24,7 @@ namespace PipeHow.DungeonGenerator.Models
         Door = 'D'
     }
 
-    interface ITile
+    public interface ITile
     {
         int Y { get; set; }
         int X { get; set; }
@@ -36,5 +40,7 @@ namespace PipeHow.DungeonGenerator.Models
         {
             TileType = TileType.Empty;
         }
+
+        public override string ToString() => $"{TileType}[{X}][{Y}]";
     }
 }
