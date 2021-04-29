@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PipeHow.DungeonGenerator.Models
+﻿namespace PipeHow.DungeonGenerator.Models
 {
     public enum TileType
     {
@@ -28,12 +24,14 @@ namespace PipeHow.DungeonGenerator.Models
     {
         int Y { get; set; }
         int X { get; set; }
+        bool IsCorner { get; set; }
         TileType TileType { get; set; }
     }
     public class Tile : ITile
     {
         public int Y { get; set; }
         public int X { get; set; }
+        public bool IsCorner { get; set; }
         public TileType TileType { get; set; }
         
         public Tile()

@@ -60,56 +60,57 @@ namespace PipeHow.DungeonGenerator.Models
             List<IRoom> rooms = new List<IRoom>();
             for (int i = 0; i < numberOfRooms; i++)
             {
-                int xPos = rand.Next(-originX/2 + 5, originX/2 - 5) + originX;
-                int yPos = rand.Next(-originY/2 + 5, originY/2 - 5) + originY;
+                int xPos = rand.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
+                int yPos = rand.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
                 int xSize = rand.Next(3, originX / 4);
                 int ySize = rand.Next(3, originY / 4);
                 rooms.Add(dungeon.CreateRoom(xPos, yPos, xSize, ySize));
                 //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
             }
 
-            dungeon.AddWalls();
+            while (dungeon.AddWalls());
 
             return dungeon;
         }
 
-        private void AddWalls()
+        private bool AddWalls()
         {
+            bool changesMade = false;
             for (int i = 0; i < Map.Count; i++)
             {
                 for (int j = 0; j < Map[i].Count; j++)
                 {
                     var tile = Map[i][j];
+                    TileType type = tile.TileType;
 
                     // Go through floor tiles
-                    if (IsFloor(tile))
+                    if (IsFloor(tile) || IsWall(tile))
                     {
                         bool emptyAbove = IsEmpty(Above(i, j));
                         bool emptyBelow = IsEmpty(Below(i, j));
                         bool emptyLeft = IsEmpty(LeftOf(i, j));
                         bool emptyRight = IsEmpty(RightOf(i, j));
-                        bool emptyTopRight = IsEmpty(RightOf(Above(i, j)));
-                        bool emptyTopLeft = IsEmpty(LeftOf(Above(i, j)));
-                        bool emptyBottomRight = IsEmpty(RightOf(Below(i, j)));
-                        bool emptyBottomLeft = IsEmpty(LeftOf(Below(i, j)));
 
-                        // TODO: Switch case?
-
+                        // Is wall and has walls on each side
+                        if (IsCrossCorner(i, j))
+                        {
+                            tile.TileType = TileType.WallCross;
+                        }
                         // Top wall
-                        if (emptyAbove && !emptyBelow)
+                        else if (emptyAbove && !emptyBelow)
                         {
                             // Top left
                             if (emptyLeft && !emptyRight)
                             {
-                                Map[i][j].TileType = TileType.WallCornerUpperLeft;
+                                tile.TileType = TileType.WallCornerUpperLeft;
                             } // Top right
                             else if (!emptyLeft && emptyRight)
                             {
-                                Map[i][j].TileType = TileType.WallCornerUpperRight;
+                                tile.TileType = TileType.WallCornerUpperRight;
                             }
                             else
                             {
-                                Map[i][j].TileType = TileType.WallHorizontal;
+                                tile.TileType = TileType.WallHorizontal;
                             }
                         } // Bottom wall
                         else if (!emptyAbove && emptyBelow)
@@ -117,15 +118,15 @@ namespace PipeHow.DungeonGenerator.Models
                             // Bottom left
                             if (emptyLeft && !emptyRight)
                             {
-                                Map[i][j].TileType = TileType.WallCornerLowerLeft;
+                                tile.TileType = TileType.WallCornerLowerLeft;
                             } // Bottom right
                             else if (!emptyLeft && emptyRight)
                             {
-                                Map[i][j].TileType = TileType.WallCornerLowerRight;
+                                tile.TileType = TileType.WallCornerLowerRight;
                             }
                             else
                             {
-                                Map[i][j].TileType = TileType.WallHorizontal;
+                                tile.TileType = TileType.WallHorizontal;
                             }
                         } // Vertical Wall or inwards-facing corner
                         else if (!emptyAbove && !emptyBelow)
@@ -133,28 +134,33 @@ namespace PipeHow.DungeonGenerator.Models
                             // Left or right wall
                             if (emptyLeft != emptyRight)
                             {
-                                Map[i][j].TileType = TileType.WallVertical;
+                                tile.TileType = TileType.WallVertical;
                             }
                             else if (IsEmpty(LeftOf(Below(i, j))))
                             {
-                                Map[i][j].TileType = TileType.WallCornerUpperRight;
+                                tile.TileType = TileType.WallCornerUpperRight;
                             }
                             else if (IsEmpty(RightOf(Below(i, j))))
                             {
-                                Map[i][j].TileType = TileType.WallCornerUpperLeft;
+                                tile.TileType = TileType.WallCornerUpperLeft;
                             }
                             else if (IsEmpty(LeftOf(Above(i, j))))
                             {
-                                Map[i][j].TileType = TileType.WallCornerLowerRight;
+                                tile.TileType = TileType.WallCornerLowerRight;
                             }
                             else if (IsEmpty(RightOf(Above(i, j))))
                             {
-                                Map[i][j].TileType = TileType.WallCornerLowerLeft;
+                                tile.TileType = TileType.WallCornerLowerLeft;
                             }
                         }
                     }
+                    if (type != tile.TileType)
+                    {
+                        changesMade = true;
+                    }
                 }
             }
+            return changesMade;
         }
 
         private IRoom CreateRoom(int x, int y, int width, int height)
@@ -169,27 +175,39 @@ namespace PipeHow.DungeonGenerator.Models
             {
                 throw new ArgumentException("Rooms should be at least 3 wide to allow for edge floor to be converted to walls!");
             }
-            FillRect(x, y, width, height, TileType.Floor);
+            FillRect(x, y, width, height, TileType.Floor, true);
 
-            return new Room
+            Room room = new Room
             {
                 BottomLeft = Map[x][y],
                 TopRight = Map[x + width - 1][y + height - 1],
                 Width = width,
                 Height = height
             };
+
+            Map[x][y].IsCorner = true;
+            Map[x + width - 1][y].IsCorner = true;
+            Map[x][y + height - 1].IsCorner = true;
+            Map[x + width - 1][y + height - 1].IsCorner = true;
+
+            return room;
         }
 
         /// <summary>
         /// Sets a rectangle on the map to a specified TileType, starting from the bottom left corner of the position.
+        /// Also clears corner values from previous rooms in the range by default.
         /// </summary>
-        private void FillRect(int x, int y, int width, int height, TileType type)
+        private void FillRect(int x, int y, int width, int height, TileType type, bool clearCorners)
         {
             for (int i = x; i < x + width; i++)
             {
                 for (int j = y; j < y + height; j++)
                 {
                     Map[i][j].TileType = type;
+                    if (clearCorners)
+                    {
+                        Map[i][j].IsCorner = false;
+                    }
                 }
             }
         }
@@ -217,9 +235,7 @@ namespace PipeHow.DungeonGenerator.Models
                 .OrderByDescending(y => y.value.Y).ThenByDescending(y => y.value.X)
                 .First().value.Y;
 
-            // Whitespace should be based on map size
-            // Get width and height of actual rooms, and get average between them
-            // Get value based on that average
+            // Padding for the map
             int mapWhitespace = 1;
             lowX -= mapWhitespace;
             lowY -= mapWhitespace;
@@ -276,12 +292,35 @@ namespace PipeHow.DungeonGenerator.Models
             return IsWall(Map[x][y]);
         }
 
+        private int AdjacentTilesOf(ITile tile, TileType type)
+        {
+            // Create a list with the 8 adjacent tiles and return the amount matching the type
+            return new List<ITile>
+            {
+                Above(tile),
+                Above(LeftOf(tile)),
+                Above(RightOf(tile)),
+                Below(tile),
+                Below(LeftOf(tile)),
+                Below(RightOf(tile)),
+                LeftOf(tile),
+                RightOf(tile),
+            }.Count(t => t.TileType == type);
+        }
+
         private bool IsWall(ITile tile)
         {
             // If the type contains "Wall"
             return tile.TileType.ToString().Contains(TileType.Wall.ToString());
         }
-
+        private bool IsCrossCorner(int x, int y)
+        {
+            return IsWall(x, y)
+                && IsWall(Above(x, y))
+                && IsWall(Below(x, y))
+                && IsWall(LeftOf(x, y))
+                && IsWall(RightOf(x, y));
+        }
         private bool IsUpperLeftCorner(int x, int y)
         {
             return IsWall(x, y)

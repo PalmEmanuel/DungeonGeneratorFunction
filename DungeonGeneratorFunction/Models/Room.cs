@@ -1,4 +1,6 @@
-﻿namespace PipeHow.DungeonGenerator.Models
+﻿using System;
+
+namespace PipeHow.DungeonGenerator.Models
 {
     interface IRoom
     {
@@ -14,7 +16,7 @@
         public int Width { get; set; }
         public int Height { get; set; }
 
-        internal bool IsRoomEdge(ITile tile)
+        internal bool IsRoomWall(ITile tile)
         {
             // Check if tile is on edge of room (in wall)
             return (tile.X == BottomLeft.X || tile.X < TopRight.X) && (tile.Y > BottomLeft.Y || tile.Y < TopRight.Y);
@@ -28,5 +30,10 @@
                 && tile.Y > BottomLeft.Y
                 && tile.Y < TopRight.Y;
         }
+
+        //public ITile GetRandomWallTile()
+        //{
+            
+        //}
     }
 }
