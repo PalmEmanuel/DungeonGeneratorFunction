@@ -9,6 +9,9 @@ namespace PipeHow.DungeonGenerator.Models
     {
         int sizeX { get; set; }
         int sizeY { get; set; }
+        /// <summary>
+        /// The map is from top left to bottom right, first index is x, second is y.
+        /// </summary>
         List<List<ITile>> Map { get; set; }
     }
 
@@ -26,7 +29,8 @@ namespace PipeHow.DungeonGenerator.Models
 
         // Default max size of message in discord is 2000 characters
         // Square root of 2000 is just below 45
-        public static IDungeon CreateDungeon() { return CreateDungeon(44, 44); }
+        // It's set to 43x43 to allow for 1 whitespace
+        public static IDungeon CreateDungeon() { return CreateDungeon(43, 43); }
 
         public static IDungeon CreateDungeon(int width, int height)
         {
@@ -61,7 +65,7 @@ namespace PipeHow.DungeonGenerator.Models
                 int xSize = rand.Next(3, originX / 4);
                 int ySize = rand.Next(3, originY / 4);
                 rooms.Add(dungeon.CreateRoom(xPos, yPos, xSize, ySize));
-                dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
+                //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
             }
 
             dungeon.AddWalls();
@@ -158,8 +162,8 @@ namespace PipeHow.DungeonGenerator.Models
             // Make sure x and y don't go outside the map
             if (x < 0 || y < 0) throw new ArgumentException("Ensure that x and y are not negative!");
             // If x or y plus requested rectangle size is outside map bounds, set to edge of map
-            x = x + width > sizeY ? width - sizeY - 1 : x;
-            y = y + height > sizeX ? height - sizeX - 1 : y;
+            x = x + width > sizeY-1 ? width - sizeY : x;
+            y = y + height > sizeX-1 ? height - sizeX : y;
 
             if (width < 3 || height < 3)
             {
@@ -195,36 +199,52 @@ namespace PipeHow.DungeonGenerator.Models
             // Get the top left and bottom right of map and print the lines between them to a string
             StringBuilder sb = new StringBuilder();
 
-            // Get cell with lowest X and highest Y
-            ITile lowestX = Map.SelectMany((row, i) => row.Select((value, j) => new { i, j, value }))
+            // Get corners of map
+            int lowX = Map.SelectMany((row, i) => row.Select((value, j) => new { i, j, value }))
                 .Where(v => v.value.TileType != TileType.Empty)
                 .OrderBy(x => x.value.X).ThenBy(x => x.value.Y)
-                .First().value;
-            ITile highestY = Map.SelectMany((row, i) => row.Select((value, j) => new { i, j, value }))
+                .First().value.X;
+            int highX = Map.SelectMany((row, i) => row.Select((value, j) => new { i, j, value }))
+                .Where(v => v.value.TileType != TileType.Empty)
+                .OrderByDescending(y => y.value.X).ThenByDescending(y => y.value.X)
+                .First().value.X;
+            int lowY = Map.SelectMany((row, i) => row.Select((value, j) => new { i, j, value }))
+                .Where(v => v.value.TileType != TileType.Empty)
+                .OrderBy(x => x.value.Y).ThenBy(x => x.value.Y)
+                .First().value.Y;
+            int highY = Map.SelectMany((row, i) => row.Select((value, j) => new { i, j, value }))
                 .Where(v => v.value.TileType != TileType.Empty)
                 .OrderByDescending(y => y.value.Y).ThenByDescending(y => y.value.X)
-                .First().value;
-
-            // Select corners of map and add whitespace for printing
-            int lowX = lowestX.X;
-            int lowY = Math.Min(lowestX.Y, highestY.Y);
-            int highX = Math.Max(lowestX.X, highestY.X);
-            int highY = highestY.Y;
+                .First().value.Y;
 
             // Whitespace should be based on map size
             // Get width and height of actual rooms, and get average between them
             // Get value based on that average
-            int mapWhitespace = (highX - lowX + highY - lowY) / 3;
-            mapWhitespace = Math.Max(mapWhitespace, 6);
-            mapWhitespace = Math.Min(mapWhitespace, 3);
+            int mapWhitespace = 1;
             lowX -= mapWhitespace;
             lowY -= mapWhitespace;
             highX += mapWhitespace;
             highY += mapWhitespace;
 
-            // When printing we need to loop through y then x
-            for (int i = lowY; i <= highY; i++) 
+            // Add number grid for debugging
+            // Copies of x loop
+            sb.Append("   ");
+            for (int j = lowX; j <= highX; j++)
             {
+                sb.Append(j);
+            }
+            sb.AppendLine("");
+            sb.Append("   ");
+            for (int j = lowX; j <= highX; j++)
+            {
+                sb.Append("─");
+            }
+            sb.AppendLine("");
+
+            // When printing we need to loop through y then x
+            for (int i = lowY; i <= highY; i++)
+            {
+                sb.Append($"{i}|");
                 for (int j = lowX; j <= highX; j++)
                 {
                     sb.Append((char)Map[j][i].TileType);
