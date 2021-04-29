@@ -95,63 +95,46 @@ namespace PipeHow.DungeonGenerator.Models
                         if (IsCrossCorner(i, j))
                         {
                             tile.TileType = TileType.WallCross;
+                        } // Top left
+                        else if (emptyAbove && !emptyBelow && emptyLeft && !emptyRight)
+                        {
+                            tile.TileType = TileType.WallCornerUpperLeft;
+                        } // Top right
+                        else if (emptyAbove && !emptyBelow && !emptyLeft && emptyRight)
+                        {
+                            tile.TileType = TileType.WallCornerUpperRight;
+                        } // Bottom left
+                        else if (!emptyAbove && emptyBelow && emptyLeft && !emptyRight)
+                        {
+                            tile.TileType = TileType.WallCornerLowerLeft;
+                        } // Bottom right
+                        else if (!emptyAbove && emptyBelow && !emptyLeft && emptyRight)
+                        {
+                            tile.TileType = TileType.WallCornerLowerRight;
+                        } // Horizontal wall
+                        else if (emptyAbove && !emptyBelow || !emptyAbove && emptyBelow)
+                        {
+                            tile.TileType = TileType.WallHorizontal;
+                        } // Vertical Wall
+                        else if (!emptyAbove && !emptyBelow && emptyLeft != emptyRight)
+                        {
+                            tile.TileType = TileType.WallVertical;
+                        } // Inwards-facing corners
+                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Below(i, j)) && !IsEmpty(RightOf(i, j)) && !IsEmpty(RightOf(Below(i, j))))
+                        {
+                            tile.TileType = TileType.WallCornerLowerRight;
                         }
-                        // Top wall
-                        else if (emptyAbove && !emptyBelow)
+                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Below(i, j)) && !IsEmpty(LeftOf(i, j)) && !IsEmpty(LeftOf(Below(i, j))))
                         {
-                            // Top left
-                            if (emptyLeft && !emptyRight)
-                            {
-                                tile.TileType = TileType.WallCornerUpperLeft;
-                            } // Top right
-                            else if (!emptyLeft && emptyRight)
-                            {
-                                tile.TileType = TileType.WallCornerUpperRight;
-                            }
-                            else
-                            {
-                                tile.TileType = TileType.WallHorizontal;
-                            }
-                        } // Bottom wall
-                        else if (!emptyAbove && emptyBelow)
+                            tile.TileType = TileType.WallCornerLowerLeft;
+                        }
+                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Above(i, j)) && !IsEmpty(RightOf(i, j)) && !IsEmpty(RightOf(Above(i, j))))
                         {
-                            // Bottom left
-                            if (emptyLeft && !emptyRight)
-                            {
-                                tile.TileType = TileType.WallCornerLowerLeft;
-                            } // Bottom right
-                            else if (!emptyLeft && emptyRight)
-                            {
-                                tile.TileType = TileType.WallCornerLowerRight;
-                            }
-                            else
-                            {
-                                tile.TileType = TileType.WallHorizontal;
-                            }
-                        } // Vertical Wall or inwards-facing corner
-                        else if (!emptyAbove && !emptyBelow)
+                            tile.TileType = TileType.WallCornerUpperRight;
+                        }
+                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Above(i, j)) && !IsEmpty(LeftOf(i, j)) && !IsEmpty(LeftOf(Above(i, j))))
                         {
-                            // Left or right wall
-                            if (emptyLeft != emptyRight)
-                            {
-                                tile.TileType = TileType.WallVertical;
-                            }
-                            else if (IsEmpty(LeftOf(Below(i, j))))
-                            {
-                                tile.TileType = TileType.WallCornerUpperRight;
-                            }
-                            else if (IsEmpty(RightOf(Below(i, j))))
-                            {
-                                tile.TileType = TileType.WallCornerUpperLeft;
-                            }
-                            else if (IsEmpty(LeftOf(Above(i, j))))
-                            {
-                                tile.TileType = TileType.WallCornerLowerRight;
-                            }
-                            else if (IsEmpty(RightOf(Above(i, j))))
-                            {
-                                tile.TileType = TileType.WallCornerLowerLeft;
-                            }
+                            tile.TileType = TileType.WallCornerUpperLeft;
                         }
                     }
                     if (type != tile.TileType)
