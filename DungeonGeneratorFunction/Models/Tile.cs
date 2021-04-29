@@ -17,6 +17,10 @@
         WallCornerUpperLeft = '┌',
         WallCornerLowerRight = '┘',
         WallCornerLowerLeft = '└',
+        WallCornerUpperRightBold = '┓',
+        WallCornerUpperLeftBold = '┏',
+        WallCornerLowerRightBold = '┛',
+        WallCornerLowerLeftBold = '┗',
         Door = 'D'
     }
 

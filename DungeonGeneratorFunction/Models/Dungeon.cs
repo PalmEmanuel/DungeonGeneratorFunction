@@ -90,7 +90,7 @@ namespace PipeHow.DungeonGenerator.Models
                         bool emptyBelow = IsEmpty(Below(i, j));
                         bool emptyLeft = IsEmpty(LeftOf(i, j));
                         bool emptyRight = IsEmpty(RightOf(i, j));
-
+                        
                         // Is wall and has walls on each side
                         if (IsCrossCorner(i, j))
                         {
@@ -112,29 +112,40 @@ namespace PipeHow.DungeonGenerator.Models
                         {
                             tile.TileType = TileType.WallCornerLowerRight;
                         } // Horizontal wall
-                        else if (emptyAbove && !emptyBelow || !emptyAbove && emptyBelow)
+                        else if (emptyAbove && !IsEmpty(Below(tile)) || !IsEmpty(Above(tile)) && emptyBelow)
                         {
                             tile.TileType = TileType.WallHorizontal;
                         } // Vertical Wall
-                        else if (!emptyAbove && !emptyBelow && emptyLeft != emptyRight)
+                        else if (emptyLeft && !IsEmpty(RightOf(tile)) || !IsEmpty(LeftOf(tile)) && emptyRight)
                         {
                             tile.TileType = TileType.WallVertical;
                         } // Inwards-facing corners
-                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Below(i, j)) && !IsEmpty(RightOf(i, j)) && !IsEmpty(RightOf(Below(i, j))))
+                        else if (!IsWall(tile))
                         {
-                            tile.TileType = TileType.WallCornerLowerRight;
-                        }
-                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Below(i, j)) && !IsEmpty(LeftOf(i, j)) && !IsEmpty(LeftOf(Below(i, j))))
-                        {
-                            tile.TileType = TileType.WallCornerLowerLeft;
-                        }
-                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Above(i, j)) && !IsEmpty(RightOf(i, j)) && !IsEmpty(RightOf(Above(i, j))))
-                        {
-                            tile.TileType = TileType.WallCornerUpperRight;
-                        }
-                        else if (!emptyAbove && !emptyBelow && !IsEmpty(Above(i, j)) && !IsEmpty(LeftOf(i, j)) && !IsEmpty(LeftOf(Above(i, j))))
-                        {
-                            tile.TileType = TileType.WallCornerUpperLeft;
+                            if (IsEmpty(LeftOf(Above(tile))) &&
+                                IsWall(Above(tile)) && IsWall(LeftOf(tile)) &&
+                                (IsFloor(Below(i, j)) || IsFloor(RightOf(i, j))))
+                            {
+                                tile.TileType = TileType.WallCornerLowerRightBold;
+                            }
+                            else if (IsEmpty(RightOf(Above(tile))) &&
+                                IsWall(Above(tile)) && IsWall(RightOf(tile)) &&
+                                (IsFloor(Below(i, j)) || IsFloor(LeftOf(i, j))))
+                            {
+                                tile.TileType = TileType.WallCornerLowerLeftBold;
+                            }
+                            else if (IsEmpty(LeftOf(Below(tile))) &&
+                                IsWall(Below(tile)) && IsWall(LeftOf(tile)) &&
+                                (IsFloor(Above(i, j)) || IsFloor(RightOf(i, j))))
+                            {
+                                tile.TileType = TileType.WallCornerUpperRightBold;
+                            }
+                            else if (IsEmpty(RightOf(Below(tile))) &&
+                                IsWall(Below(tile)) && IsWall(RightOf(tile)) &&
+                                (IsFloor(Above(i, j)) || IsFloor(LeftOf(i, j))))
+                            {
+                                tile.TileType = TileType.WallCornerUpperLeftBold;
+                            }
                         }
                     }
                     if (type != tile.TileType)
@@ -298,11 +309,12 @@ namespace PipeHow.DungeonGenerator.Models
         }
         private bool IsCrossCorner(int x, int y)
         {
-            return IsWall(x, y)
-                && IsWall(Above(x, y))
-                && IsWall(Below(x, y))
-                && IsWall(LeftOf(x, y))
-                && IsWall(RightOf(x, y));
+            // If the tile is a wall or floor tile, and has walls with the right alignment directly beside it (non-diagonal)
+            return (IsWall(x, y) || IsFloor(x, y))
+                && (Above(x, y).TileType.ToString().Contains(TileType.WallVertical.ToString())
+                && Below(x, y).TileType.ToString().Contains(TileType.WallVertical.ToString())
+                && LeftOf(x, y).TileType.ToString().Contains(TileType.WallHorizontal.ToString())
+                && RightOf(x, y).TileType.ToString().Contains(TileType.WallHorizontal.ToString()));
         }
         private bool IsUpperLeftCorner(int x, int y)
         {
