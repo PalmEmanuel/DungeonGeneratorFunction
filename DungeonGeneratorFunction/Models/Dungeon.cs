@@ -69,8 +69,8 @@ namespace PipeHow.DungeonGenerator.Models
                 //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
             }
 
-            //rooms.Add(dungeon.CreateRoom(16, 16, 4, 4, 2));
-            //rooms.Add(dungeon.CreateRoom(14, 13, 3, 3, 3));
+            //rooms.Add(dungeon.CreateRoom(18, 17, 3, 3, 2));
+            //rooms.Add(dungeon.CreateRoom(20, 19, 3, 8, 3));
 
             while (dungeon.AddWalls());
 
@@ -101,28 +101,28 @@ namespace PipeHow.DungeonGenerator.Models
                             tile.TileType = TileType.WallCross;
                         } // Top left
                         else if (ShouldBeWall(Below(tile)) && ShouldBeWall(RightOf(tile)) && IsFloor(RightOf(Below(tile))) && !ShouldBeFloor(LeftOf(Above(tile))) && !ShouldBeFloor(LeftOf(tile)) &&
-                            Above(tile).ShouldBeType != TileType.WallCornerUpperRight &&
+                            !Above(tile).ShouldBeType.ToString().Contains("Upper") &&
                             (emptyAbove || (tile.RoomId != Above(tile).RoomId && Above(tile).ShouldBeType == TileType.WallCornerLowerRight && ShouldBeWall(LeftOf(Above(tile))))) &&
                             (emptyLeft || (tile.RoomId != LeftOf(tile).RoomId && LeftOf(tile).ShouldBeType == TileType.WallCornerLowerRight && ShouldBeWall(LeftOf(Above(tile))))))
                         {
                             tile.TileType = TileType.WallCornerUpperLeft;
                         } // Top right
                         else if (ShouldBeWall(Below(tile)) && ShouldBeWall(LeftOf(tile)) && IsFloor(LeftOf(Below(tile))) && !ShouldBeFloor(RightOf(Above(tile))) && !ShouldBeFloor(RightOf(tile)) &&
-                            Above(tile).ShouldBeType != TileType.WallCornerUpperLeft &&
+                            !Above(tile).ShouldBeType.ToString().Contains("Upper") &&
                             (emptyAbove || (tile.RoomId != Above(tile).RoomId && Above(tile).ShouldBeType == TileType.WallCornerLowerLeft && ShouldBeWall(RightOf(Above(tile))))) &&
                             (emptyRight || (tile.RoomId != RightOf(tile).RoomId && RightOf(tile).ShouldBeType == TileType.WallCornerLowerLeft && ShouldBeWall(RightOf(Above(tile))))))
                         {
                             tile.TileType = TileType.WallCornerUpperRight;
                         } // Bottom left
                         else if (ShouldBeWall(Above(tile)) && ShouldBeWall(RightOf(tile)) && IsFloor(RightOf(Above(tile))) && !ShouldBeFloor(LeftOf(Below(tile))) && !ShouldBeFloor(LeftOf(tile)) &&
-                            Below(tile).ShouldBeType != TileType.WallCornerLowerRight &&
+                            !Below(tile).ShouldBeType.ToString().Contains("Lower") &&
                             (emptyBelow || (tile.RoomId != Below(tile).RoomId && Below(tile).ShouldBeType == TileType.WallCornerUpperRight && ShouldBeWall(LeftOf(Below(tile))))) &&
                             (emptyLeft || (tile.RoomId != LeftOf(tile).RoomId && LeftOf(tile).ShouldBeType == TileType.WallCornerUpperRight && ShouldBeWall(LeftOf(Below(tile))))))
                         {
                             tile.TileType = TileType.WallCornerLowerLeft;
                         } // Bottom right
                         else if (ShouldBeWall(Above(tile)) && ShouldBeWall(LeftOf(tile)) && IsFloor(LeftOf(Above(tile))) && !ShouldBeFloor(RightOf(Below(tile))) && !ShouldBeFloor(RightOf(tile)) &&
-                            Below(tile).ShouldBeType != TileType.WallCornerLowerLeft &&
+                            !Below(tile).ShouldBeType.ToString().Contains("Lower") &&
                             (emptyBelow || (tile.RoomId != Below(tile).RoomId && Below(tile).ShouldBeType == TileType.WallCornerUpperLeft && ShouldBeWall(RightOf(Below(tile))))) &&
                             (emptyRight || (tile.RoomId != RightOf(tile).RoomId && RightOf(tile).ShouldBeType == TileType.WallCornerUpperLeft && ShouldBeWall(RightOf(Below(tile))))))
                         {
@@ -142,25 +142,25 @@ namespace PipeHow.DungeonGenerator.Models
                                 IsWall(Above(tile)) && IsWall(LeftOf(tile)) &&
                                 (IsFloor(Below(i, j)) || IsFloor(RightOf(i, j))))
                             {
-                                tile.TileType = TileType.WallCornerLowerRightBold;
+                                tile.TileType = TileType.WallCornerLowerRight;
                             }
                             else if (IsEmpty(RightOf(Above(tile))) &&
                                 IsWall(Above(tile)) && IsWall(RightOf(tile)) &&
                                 (IsFloor(Below(i, j)) || IsFloor(LeftOf(i, j))))
                             {
-                                tile.TileType = TileType.WallCornerLowerLeftBold;
+                                tile.TileType = TileType.WallCornerLowerLeft;
                             }
                             else if (IsEmpty(LeftOf(Below(tile))) &&
                                 IsWall(Below(tile)) && IsWall(LeftOf(tile)) &&
                                 (IsFloor(Above(i, j)) || IsFloor(RightOf(i, j))))
                             {
-                                tile.TileType = TileType.WallCornerUpperRightBold;
+                                tile.TileType = TileType.WallCornerUpperRight;
                             }
                             else if (IsEmpty(RightOf(Below(tile))) &&
                                 IsWall(Below(tile)) && IsWall(RightOf(tile)) &&
                                 (IsFloor(Above(i, j)) || IsFloor(LeftOf(i, j))))
                             {
-                                tile.TileType = TileType.WallCornerUpperLeftBold;
+                                tile.TileType = TileType.WallCornerUpperLeft;
                             }
                         }
                     }
