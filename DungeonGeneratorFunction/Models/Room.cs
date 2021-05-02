@@ -2,38 +2,76 @@
 
 namespace PipeHow.DungeonGenerator.Models
 {
-    interface IRoom
+    public enum RoomType
     {
-        ITile TopRight { get; set; }
-        ITile BottomLeft { get; set; }
+        Room
+    }
+
+    public interface IRoom
+    {
+        int Id { get; set; }
+        RoomType RoomType { get; set; }
+        ITile TopLeft { get; set; }
+        ITile BottomRight { get; set; }
         int Width { get; set; }
         int Height { get; set; }
     }
-    internal class Room : IRoom
+
+    public class Room : IRoom
     {
-        public ITile TopRight { get; set; }
-        public ITile BottomLeft { get; set; }
+        public int Id { get; set; }
+        public RoomType RoomType { get; set; }
+        public ITile TopLeft { get; set; }
+        public ITile BottomRight { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
 
         internal bool IsRoomWall(ITile tile)
         {
             // Check if tile is on edge of room (in wall)
-            return (tile.X == BottomLeft.X || tile.X < TopRight.X) && (tile.Y > BottomLeft.Y || tile.Y < TopRight.Y);
+            return (tile.X == TopLeft.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
+                    (tile.X == BottomRight.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
+                    (tile.Y == TopLeft.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X)) ||
+                    (tile.Y == BottomRight.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X));
         }
 
         internal bool IsInRoom(ITile tile)
         {
             // Check if tile is within room
-            return tile.X > BottomLeft.X
-                && tile.X < TopRight.X
-                && tile.Y > BottomLeft.Y
-                && tile.Y < TopRight.Y;
+            return tile.X > TopLeft.X
+                && tile.X < BottomRight.X
+                && tile.Y > TopLeft.Y
+                && tile.Y < BottomRight.Y;
         }
 
-        //public ITile GetRandomWallTile()
-        //{
-            
-        //}
+        public Tuple<int,int> GetRandomWallTile()
+        {
+            // Select which axis to randomize
+            Random rand = new Random();
+            string randomAxis = new[] { "X", "Y" }[rand.Next(0, 2)];
+
+            // Create and initialize output variables
+            int x, y;
+            x = y = 0;
+            switch (randomAxis)
+            {
+                case "X":
+                    // Randomize top or bottom
+                    y = new[] { TopLeft.Y, BottomRight.Y }[rand.Next(0, 2)];
+
+                    x = rand.Next(TopLeft.X, BottomRight.X + 1);
+                    break;
+                case "Y":
+                    // Randomize left or right
+                    x = new[] { TopLeft.X, BottomRight.X }[rand.Next(0, 2)];
+
+                    y = rand.Next(TopLeft.Y, BottomRight.Y + 1);
+                    break;
+            }
+
+            return new Tuple<int, int>(x, y);
+        }
+
+        public override string ToString() => $"{Id}[{TopLeft.X},{TopLeft.X}>{BottomRight.X},{BottomRight.X}]";
     }
 }

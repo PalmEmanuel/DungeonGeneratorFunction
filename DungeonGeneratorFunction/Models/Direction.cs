@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PipeHow.DungeonGenerator.Models
+﻿namespace PipeHow.DungeonGenerator.Models
 {
-    internal enum Direction
+    public enum Direction
     {
         WEST,
         EAST,
