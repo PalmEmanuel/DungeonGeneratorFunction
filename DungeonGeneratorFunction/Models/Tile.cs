@@ -17,10 +17,14 @@
         WallCornerUpperLeft = '┌',
         WallCornerLowerRight = '┘',
         WallCornerLowerLeft = '└',
-        WallCornerUpperRightBold = '┓',
-        WallCornerUpperLeftBold = '┏',
-        WallCornerLowerRightBold = '┛',
-        WallCornerLowerLeftBold = '┗',
+        WallCornerInnerUpperRight = '┓',
+        WallCornerInnerUpperLeft = '┏',
+        WallCornerInnerLowerRight = '┛',
+        WallCornerInnerLowerLeft = '┗',
+        //WallCornerUpperRightBold = '┓',
+        //WallCornerUpperLeftBold = '┏',
+        //WallCornerLowerRightBold = '┛',
+        //WallCornerLowerLeftBold = '┗',
         Door = 'D'
     }
 

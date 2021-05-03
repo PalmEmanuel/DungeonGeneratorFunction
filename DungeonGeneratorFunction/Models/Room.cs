@@ -15,6 +15,10 @@ namespace PipeHow.DungeonGenerator.Models
         ITile BottomRight { get; set; }
         int Width { get; set; }
         int Height { get; set; }
+
+        bool IsRoomCorner(ITile tile);
+        bool IsRoomWall(ITile tile);
+        bool IsInRoom(ITile tile);
     }
 
     public class Room : IRoom
@@ -26,18 +30,27 @@ namespace PipeHow.DungeonGenerator.Models
         public int Width { get; set; }
         public int Height { get; set; }
 
-        internal bool IsRoomWall(ITile tile)
+        public bool IsRoomCorner(ITile tile)
         {
-            // Check if tile is on edge of room (in wall)
+            // Check if tile is on corner of room
+            return tile.X == TopLeft.X && tile.Y == TopLeft.Y
+                || tile.X == TopLeft.X && tile.Y == BottomRight.Y
+                || tile.X == BottomRight.X && tile.Y == TopLeft.Y
+                || tile.X == BottomRight.X && tile.Y == BottomRight.Y;
+        }
+
+        public bool IsRoomWall(ITile tile)
+        {
+            // Check if tile is in wall of room
             return (tile.X == TopLeft.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
                     (tile.X == BottomRight.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
                     (tile.Y == TopLeft.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X)) ||
                     (tile.Y == BottomRight.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X));
         }
 
-        internal bool IsInRoom(ITile tile)
+        public bool IsInRoom(ITile tile)
         {
-            // Check if tile is within room
+            // Check if tile is within walls of room
             return tile.X > TopLeft.X
                 && tile.X < BottomRight.X
                 && tile.Y > TopLeft.Y
