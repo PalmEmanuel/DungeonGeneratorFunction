@@ -36,6 +36,8 @@
         TileType TileType { get; set; }
         TileType ShouldBeType { get; set; }
         int RoomId { get; set; }
+
+        bool ShouldBeCorner();
     }
     public class Tile : ITile
     {
@@ -58,6 +60,8 @@
             TileType = TileType.Empty;
             ShouldBeType = TileType.Empty;
         }
+
+        public bool ShouldBeCorner() => ShouldBeType.ToString().Contains("Corner");
 
         public override string ToString() => $"{TileType}[{X}][{Y}]";
     }
