@@ -21,40 +21,86 @@
         WallCornerInnerUpperLeft = '┏',
         WallCornerInnerLowerRight = '┛',
         WallCornerInnerLowerLeft = '┗',
-        //WallCornerUpperRightBold = '┓',
-        //WallCornerUpperLeftBold = '┏',
-        //WallCornerLowerRightBold = '┛',
-        //WallCornerLowerLeftBold = '┗',
         Door = 'D'
     }
 
     public interface ITile
     {
-        Direction Direction { get; set; }
+        int RoomId { get; set; }
         int Y { get; set; }
         int X { get; set; }
         TileType TileType { get; set; }
         TileType ShouldBeType { get; set; }
-        int RoomId { get; set; }
+        string Symbol { get; }
+
+        Direction Direction { get; set; }
 
         bool ShouldBeCorner();
     }
     public class Tile : ITile
     {
-        public Direction Direction { get; set; }
+        public int RoomId { get; set; }
         public int Y { get; set; }
         public int X { get; set; }
+        public Direction Direction { get; set; }
+
         private TileType tileType;
         /// <summary>
         /// The type of the tile. Setting this also sets the ShouldBeType.
         /// </summary>
         public TileType TileType { get => tileType; set { tileType = value; ShouldBeType = value; } }
         /// <summary>
-        /// A tiletype value for evaluating changes. Is also set by setting TileType.
+        /// A tiletype value for evaluating changes before applying. Is also set by setting TileType.
         /// </summary>
         public TileType ShouldBeType { get; set; }
-        public int RoomId { get; set; }
-        
+        public string Symbol {
+            get {
+                switch (TileType)
+                {
+                    case TileType.Empty:
+                        return " ";
+                    case TileType.Floor:
+                        return " ";
+                    case TileType.Wall:
+                        return "W";
+                    case TileType.WallVertical:
+                        return "│";
+                    case TileType.WallHorizontal:
+                        return "─";
+                    case TileType.WallCross:
+                        return "┼";
+                    case TileType.WallVerticalSeparatorLeft:
+                        return "┤";
+                    case TileType.WallVerticalSeparatorRight:
+                        return "├";
+                    case TileType.WallHorizontalSeparatorUp:
+                        return "┴";
+                    case TileType.WallHorizontalSeparatorDown:
+                        return "┬";
+                    case TileType.WallCornerUpperRight:
+                        return "┐";
+                    case TileType.WallCornerUpperLeft:
+                        return "┌";
+                    case TileType.WallCornerLowerRight:
+                        return "┘";
+                    case TileType.WallCornerLowerLeft:
+                        return "└";
+                    case TileType.WallCornerInnerUpperRight:
+                        return "┐";
+                    case TileType.WallCornerInnerUpperLeft:
+                        return "┌";
+                    case TileType.WallCornerInnerLowerRight:
+                        return "┘";
+                    case TileType.WallCornerInnerLowerLeft:
+                        return "└";
+                    case TileType.Door:
+                        return "D";
+                    default:
+                        return "";
+                }
+            }
+        }
+
         public Tile()
         {
             TileType = TileType.Empty;

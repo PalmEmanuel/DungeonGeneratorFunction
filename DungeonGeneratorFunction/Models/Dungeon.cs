@@ -71,7 +71,6 @@ namespace PipeHow.DungeonGenerator.Models
                 //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
                 Console.WriteLine($"dungeon.CreateRoom({xPos}, {yPos}, {xSize}, {ySize},{i + 2});");
             }
-
             // After adding all rooms, make sure the non-walls are floor
             dungeon.FillCommonFloor();
             // Set walls based on tiles relative types and positions to each other
@@ -261,19 +260,23 @@ namespace PipeHow.DungeonGenerator.Models
 
                                 // If corners
                                 // Outer upper left
-                                if (i == x && j == y)
+                                if (i == x && j == y &&
+                                    i == existingRoom.TopLeft.X && j == existingRoom.TopLeft.Y)
                                 {
                                     tile.ShouldBeType = TileType.WallCornerUpperLeft;
                                 } // Outer lower left
-                                else if (i == x && j == y + height - 1)
+                                else if (i == x && j == y + height - 1 &&
+                                    i == existingRoom.TopLeft.X && j == existingRoom.BottomRight.Y)
                                 {
                                     tile.ShouldBeType = TileType.WallCornerLowerLeft;
                                 } // Outer upper right
-                                else if (i == x + width - 1 && j == y)
+                                else if (i == x + width - 1 && j == y &&
+                                    i == existingRoom.BottomRight.X && j == existingRoom.TopLeft.Y)
                                 {
                                     tile.ShouldBeType = TileType.WallCornerUpperRight;
                                 } // Outer lower right
-                                else if (i == x + width - 1 && j == y + height - 1)
+                                else if (i == x + width - 1 && j == y + height - 1 &&
+                                    i == existingRoom.BottomRight.X && j == existingRoom.BottomRight.Y)
                                 {
                                     tile.ShouldBeType = TileType.WallCornerLowerRight;
                                 }
@@ -378,7 +381,7 @@ namespace PipeHow.DungeonGenerator.Models
                 sb.Append($"{i}|");
                 for (int j = lowX; j <= highX; j++)
                 {
-                    sb.Append((char)Map[j][i].TileType);
+                    sb.Append(Map[j][i].Symbol);
                 }
                 sb.AppendLine("");
             }
