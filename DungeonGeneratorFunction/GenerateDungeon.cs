@@ -12,24 +12,31 @@ namespace PipeHow.DungeonGenerator
     {
         [FunctionName("GenerateDungeon")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
             ILogger log)
         {
+            int width = 43;
+            int height = 43;
+            if (req.Query.ContainsKey("width") || req.Query.ContainsKey("height"))
+            {
+                if (!int.TryParse(req.Query["width"], out width) || !int.TryParse(req.Query["height"], out height))
+                {
+                    return new BadRequestObjectResult("Please provide width and height as numbers, or leave them out.");
+                }
+            }
+            int roomCount = 8;
+            if (req.Query.ContainsKey("roomCount"))
+            {
+                if (!int.TryParse(req.Query["roomCount"], out roomCount))
+                {
+                    return new BadRequestObjectResult("Please provide width and height as numbers, or leave them out.");
+                }
+            }
+
             // http://roguebasin.roguelikedevelopment.org/index.php?title=Dungeon-Building_Algorithm
-            IDungeon dungeon = Dungeon.CreateDungeon();
+            // TODO: Add configuration DI for other symbols etc
+            IDungeon dungeon = Dungeon.CreateDungeon(width, height, roomCount);
             string responseMessage = dungeon.ToString();
-
-            //log.LogInformation("C# HTTP trigger function processed a request.");
-
-            //string name = req.Query["name"];
-
-            //string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            //dynamic data = JsonConvert.DeserializeObject(requestBody);
-            //name = name ?? data?.name;
-
-            //string responseMessage = string.IsNullOrEmpty(name)
-            //    ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-            //    : $"Hello, {name}. This HTTP triggered function executed successfully.";
 
             return new OkObjectResult(responseMessage);
         }

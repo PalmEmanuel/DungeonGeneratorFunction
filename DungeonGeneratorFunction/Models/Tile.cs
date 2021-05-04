@@ -58,7 +58,7 @@
                 switch (TileType)
                 {
                     case TileType.Empty:
-                        return " ";
+                        return "X";
                     case TileType.Floor:
                         return " ";
                     case TileType.Wall:

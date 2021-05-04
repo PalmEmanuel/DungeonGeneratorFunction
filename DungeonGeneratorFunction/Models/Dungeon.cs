@@ -33,9 +33,9 @@ namespace PipeHow.DungeonGenerator.Models
 
         // Default max size of message in discord is 2000 characters
         // Square root of 2000 is just below 45
-        public static IDungeon CreateDungeon() { return CreateDungeon(42, 42); }
+        public static IDungeon CreateDungeon() { return CreateDungeon(42, 42, 8); }
 
-        public static IDungeon CreateDungeon(int width, int height)
+        public static IDungeon CreateDungeon(int width, int height, int roomCount)
         {
             Dungeon dungeon = new Dungeon();
 
@@ -59,8 +59,7 @@ namespace PipeHow.DungeonGenerator.Models
             dungeon.CreateRoom(originX, originY, 6, 6, 1);
 
             Random rand = new Random();
-            var numberOfRooms = rand.Next(6, 12);
-            for (int i = 0; i < numberOfRooms; i++)
+            for (int i = 0; i < roomCount; i++)
             {
                 int xPos = rand.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
                 int yPos = rand.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
@@ -360,25 +359,25 @@ namespace PipeHow.DungeonGenerator.Models
             highX += mapWhitespace;
             highY += mapWhitespace;
 
-            // Add number grid for debugging
-            // Copies of x loop
-            sb.Append("   ");
-            for (int j = lowX; j <= highX; j++)
-            {
-                sb.Append(j);
-            }
-            sb.AppendLine("");
-            sb.Append("   ");
-            for (int j = lowX; j <= highX; j++)
-            {
-                sb.Append("─");
-            }
-            sb.AppendLine("");
+            //// Add number grid for debugging
+            //// Copies of x loop
+            //sb.Append("   ");
+            //for (int j = lowX; j <= highX; j++)
+            //{
+            //    sb.Append(j);
+            //}
+            //sb.AppendLine("");
+            //sb.Append("   ");
+            //for (int j = lowX; j <= highX; j++)
+            //{
+            //    sb.Append("─");
+            //}
+            //sb.AppendLine("");
 
             // When printing we need to loop through y then x
             for (int i = lowY; i <= highY; i++)
             {
-                sb.Append($"{i}|");
+                //sb.Append($"{i}|");
                 for (int j = lowX; j <= highX; j++)
                 {
                     sb.Append(Map[j][i].Symbol);
