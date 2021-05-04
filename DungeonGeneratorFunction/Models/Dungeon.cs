@@ -60,135 +60,142 @@ namespace PipeHow.DungeonGenerator.Models
 
             Random rand = new Random();
             var numberOfRooms = rand.Next(6, 12);
-            //for (int i = 0; i < numberOfRooms; i++)
-            //{
-            //    int xPos = rand.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
-            //    int yPos = rand.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
-            //    int xSize = rand.Next(3, originX / 4);
-            //    int ySize = rand.Next(3, originY / 4);
-            //    // Create room with id 2 and onwards
-            //    dungeon.CreateRoom(xPos, yPos, xSize, ySize, i + 2);
-            //    //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
-            //    Console.WriteLine($"dungeon.CreateRoom({xPos}, {yPos}, {xSize}, {ySize},{i + 2});");
-            //}
-            dungeon.CreateRoom(23, 17, 4, 3, 2);
-            dungeon.CreateRoom(21, 20, 3, 4, 3);
-            dungeon.CreateRoom(20, 20, 3, 4, 4);
-            dungeon.CreateRoom(22, 24, 4, 3, 5);
-            dungeon.CreateRoom(16, 19, 4, 3, 6);
-            dungeon.CreateRoom(17, 16, 4, 4, 7);
+            for (int i = 0; i < numberOfRooms; i++)
+            {
+                int xPos = rand.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
+                int yPos = rand.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
+                int xSize = rand.Next(3, originX / 4);
+                int ySize = rand.Next(3, originY / 4);
+                // Create room with id 2 and onwards
+                dungeon.CreateRoom(xPos, yPos, xSize, ySize, i + 2);
+                //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
+                Console.WriteLine($"dungeon.CreateRoom({xPos}, {yPos}, {xSize}, {ySize},{i + 2});");
+            }
 
-            while (dungeon.AddWalls());
+            // After adding all rooms, make sure the non-walls are floor
+            dungeon.FillCommonFloor();
+            // Set walls based on tiles relative types and positions to each other
+            dungeon.AddWalls();
 
             return dungeon;
         }
 
-        private bool AddWalls()
+        private void FillCommonFloor()
         {
-            // After adding all rooms, make sure the non-walls are floor
-            foreach (var room in Rooms)
+            // Find position of all tiles that are in more than one room, where the tile is not a wall in all of the rooms
+            var floorTilePositions = Map.SelectMany(row => row).Select(t => new
             {
-                for (int i = room.TopLeft.X + 1; i < room.BottomRight.X - 1; i++)
-                {
-                    for (int j = room.TopLeft.Y + 1; j < room.BottomRight.Y - 1; j++)
-                    {
-                        Map[i][j].TileType = TileType.Floor;
-                    }
-                }
+                x = t.X,
+                y = t.Y,
+                roomCount = Rooms.Count(r => r.IsInRoom(t)), // Amount of rooms where the tile is not a wall
+                wallCount = Rooms.Count(r => r.IsRoomWall(t)) // Amount of rooms where the tile is a wall
+            }).Where(t => t.wallCount < t.roomCount).ToList();
+
+            // Set found tiles to floor, since they are not the "outer wall" of the combined rooms
+            foreach (var floorPos in floorTilePositions) {
+                Map[floorPos.x][floorPos.y].TileType = TileType.Floor;
             }
+        }
 
-            bool changesMade = false;
-            for (int i = 0; i < Map.Count; i++)
+        private void AddWalls()
+        {
+            bool changesMade;
+            do
             {
-                for (int j = 0; j < Map[i].Count; j++)
+                changesMade = false;
+                for (int i = 0; i < Map.Count; i++)
                 {
-                    var tile = Map[i][j];
-                    TileType type = tile.TileType;
-
-                    // Go through floor tiles
-                    if (IsFloor(tile) || IsWall(tile))
+                    for (int j = 0; j < Map[i].Count; j++)
                     {
-                        bool emptyAbove = IsEmpty(Above(tile));
-                        bool emptyBelow = IsEmpty(Below(tile));
-                        bool emptyLeft = IsEmpty(LeftOf(tile));
-                        bool emptyRight = IsEmpty(RightOf(tile));
+                        var tile = Map[i][j];
+                        TileType type = tile.TileType;
 
-                        // Is wall and has walls on each side
-                        if (ShouldBeCrossCorner(tile))
+                        // Go through floor tiles
+                        if (IsFloor(tile) || IsWall(tile))
                         {
-                            tile.TileType = TileType.WallCross;
-                        } // Top left
-                        else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && ShouldBeWall(Below(tile)) && ShouldBeWall(RightOf(tile)) && IsFloor(RightOf(Below(tile))) && !ShouldBeFloor(LeftOf(Above(tile))) && !ShouldBeFloor(Above(tile)) && !ShouldBeFloor(LeftOf(tile)) &&
-                            LeftOf(tile).ShouldBeType != TileType.WallCornerLowerLeft &&
-                            (emptyAbove || (tile.RoomId != Above(tile).RoomId && Above(tile).ShouldBeType == TileType.WallCornerLowerRight && ShouldBeWall(LeftOf(Above(tile))))) &&
-                            (emptyLeft || (tile.RoomId != LeftOf(tile).RoomId && LeftOf(tile).ShouldBeType == TileType.WallCornerLowerRight && ShouldBeWall(LeftOf(Above(tile))))))
-                        {
-                            tile.TileType = TileType.WallCornerUpperLeft;
-                        } // Top right
-                        else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && ShouldBeWall(Below(tile)) && ShouldBeWall(LeftOf(tile)) && IsFloor(LeftOf(Below(tile))) && !ShouldBeFloor(RightOf(Above(tile))) && !ShouldBeFloor(Above(tile)) && !ShouldBeFloor(RightOf(tile)) &&
-                            RightOf(tile).ShouldBeType != TileType.WallCornerLowerRight &&
-                            (emptyAbove || (tile.RoomId != Above(tile).RoomId && Above(tile).ShouldBeType == TileType.WallCornerLowerLeft && ShouldBeWall(RightOf(Above(tile))))) &&
-                            (emptyRight || (tile.RoomId != RightOf(tile).RoomId && RightOf(tile).ShouldBeType == TileType.WallCornerLowerLeft && ShouldBeWall(RightOf(Above(tile))))))
-                        {
-                            tile.TileType = TileType.WallCornerUpperRight;
-                        } // Bottom left
-                        else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && ShouldBeWall(Above(tile)) && ShouldBeWall(RightOf(tile)) && IsFloor(RightOf(Above(tile))) && !ShouldBeFloor(LeftOf(Below(tile))) && !ShouldBeFloor(Below(tile)) && !ShouldBeFloor(LeftOf(tile)) &&
-                            LeftOf(tile).ShouldBeType != TileType.WallCornerUpperLeft &&
-                            (emptyBelow || (tile.RoomId != Below(tile).RoomId && Below(tile).ShouldBeType == TileType.WallCornerUpperRight && ShouldBeWall(LeftOf(Below(tile))))) &&
-                            (emptyLeft || (tile.RoomId != LeftOf(tile).RoomId && LeftOf(tile).ShouldBeType == TileType.WallCornerUpperRight && ShouldBeWall(LeftOf(Below(tile))))))
-                        {
-                            tile.TileType = TileType.WallCornerLowerLeft;
-                        } // Bottom right
-                        else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && ShouldBeWall(Above(tile)) && ShouldBeWall(LeftOf(tile)) && IsFloor(LeftOf(Above(tile))) && !ShouldBeFloor(RightOf(Below(tile))) && !ShouldBeFloor(Below(tile)) && !ShouldBeFloor(RightOf(tile)) &&
-                            RightOf(tile).ShouldBeType != TileType.WallCornerUpperRight &&
-                            (emptyBelow || (tile.RoomId != Below(tile).RoomId && Below(tile).ShouldBeType == TileType.WallCornerUpperLeft && ShouldBeWall(RightOf(Below(tile))))) &&
-                            (emptyRight || (tile.RoomId != RightOf(tile).RoomId && RightOf(tile).ShouldBeType == TileType.WallCornerUpperLeft && ShouldBeWall(RightOf(Below(tile))))))
-                        {
-                            tile.TileType = TileType.WallCornerLowerRight;
-                        } // Horizontal wall
-                        else if (IsEmpty(Above(tile)) && !IsEmpty(Below(tile)) || !IsEmpty(Above(tile)) && IsEmpty(Below(tile)) && !tile.TileType.ToString().Contains("Corner"))
-                        {
-                            tile.TileType = TileType.WallHorizontal;
-                        } // Vertical Wall
-                        else if (IsEmpty(LeftOf(tile)) && !IsEmpty(RightOf(tile)) || !IsEmpty(LeftOf(tile)) && IsEmpty(RightOf(tile)) && !tile.TileType.ToString().Contains("Corner"))
-                        {
-                            tile.TileType = TileType.WallVertical;
-                        } // Inwards-facing corners
-                        else
-                        {
-                            if (IsEmpty(LeftOf(Above(tile))) &&
-                                ShouldBeWall(Above(tile)) && ShouldBeWall(LeftOf(tile)) &&
-                                (IsFloor(Below(i, j)) || IsFloor(RightOf(i, j))))
+                            bool emptyAbove = IsEmpty(Above(tile));
+                            bool emptyBelow = IsEmpty(Below(tile));
+                            bool emptyLeft = IsEmpty(LeftOf(tile));
+                            bool emptyRight = IsEmpty(RightOf(tile));
+
+                            // Is wall and has walls on each side
+                            // Check ShouldBeType for left or above (already processed tiles in loop)
+                            // Check TileType for right or below (not yet processed tiles in loop)
+                            if (ShouldBeCrossCorner(tile))
                             {
-                                tile.TileType = TileType.WallCornerInnerLowerRight;
-                            }
-                            else if (IsEmpty(RightOf(Above(tile))) &&
-                                ShouldBeWall(Above(tile)) && ShouldBeWall(RightOf(tile)) &&
-                                (IsFloor(Below(i, j)) || IsFloor(LeftOf(i, j))))
+                                tile.TileType = TileType.WallCross;
+                            } // Top left
+                            else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && ShouldBeWall(Below(tile)) && ShouldBeWall(RightOf(tile)) && ShouldBeFloor(RightOf(Below(tile))) && !IsFloor(LeftOf(Above(tile))) && !IsFloor(Above(tile)) && !IsFloor(LeftOf(tile)) &&
+                                LeftOf(tile).TileType != TileType.WallCornerLowerLeft &&
+                                (emptyAbove || (tile.RoomId != Above(tile).RoomId && Above(tile).ShouldBeType == TileType.WallCornerLowerRight && ShouldBeWall(LeftOf(Above(tile))))) &&
+                                (emptyLeft || (tile.RoomId != LeftOf(tile).RoomId && LeftOf(tile).ShouldBeType == TileType.WallCornerLowerRight && ShouldBeWall(LeftOf(Above(tile))))))
                             {
-                                tile.TileType = TileType.WallCornerInnerLowerLeft;
-                            }
-                            else if (IsEmpty(LeftOf(Below(tile))) &&
-                                ShouldBeWall(Below(tile)) && ShouldBeWall(LeftOf(tile)) &&
-                                (IsFloor(Above(i, j)) || IsFloor(RightOf(i, j))))
+                                tile.TileType = TileType.WallCornerUpperLeft;
+                            } // Top right
+                            else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && ShouldBeWall(Below(tile)) && IsWall(LeftOf(tile)) && IsFloor(LeftOf(Below(tile))) && !ShouldBeFloor(RightOf(Above(tile))) && !IsFloor(Above(tile)) && !ShouldBeFloor(RightOf(tile)) &&
+                                RightOf(tile).TileType != TileType.WallCornerLowerRight &&
+                                (emptyAbove || (tile.RoomId != Above(tile).RoomId && Above(tile).ShouldBeType == TileType.WallCornerLowerLeft && ShouldBeWall(RightOf(Above(tile))))) &&
+                                (emptyRight || (tile.RoomId != RightOf(tile).RoomId && RightOf(tile).ShouldBeType == TileType.WallCornerLowerLeft && ShouldBeWall(RightOf(Above(tile))))))
                             {
-                                tile.TileType = TileType.WallCornerInnerUpperRight;
-                            }
-                            else if (IsEmpty(RightOf(Below(tile))) &&
-                                ShouldBeWall(Below(tile)) && ShouldBeWall(RightOf(tile)) &&
-                                (IsFloor(Above(i, j)) || IsFloor(LeftOf(i, j))))
+                                tile.TileType = TileType.WallCornerUpperRight;
+                            } // Bottom left
+                            else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && IsWall(Above(tile)) && ShouldBeWall(RightOf(tile)) && ShouldBeFloor(RightOf(Above(tile))) && !IsFloor(LeftOf(Below(tile))) && !ShouldBeFloor(Below(tile)) && !IsFloor(LeftOf(tile)) &&
+                                LeftOf(tile).TileType != TileType.WallCornerUpperLeft &&
+                                (emptyBelow || (tile.RoomId != Below(tile).RoomId && Below(tile).ShouldBeType == TileType.WallCornerUpperRight && ShouldBeWall(LeftOf(Below(tile))))) &&
+                                (emptyLeft || (tile.RoomId != LeftOf(tile).RoomId && LeftOf(tile).ShouldBeType == TileType.WallCornerUpperRight && ShouldBeWall(LeftOf(Below(tile))))))
                             {
-                                tile.TileType = TileType.WallCornerInnerUpperLeft;
+                                tile.TileType = TileType.WallCornerLowerLeft;
+                            } // Bottom right
+                            else if (AdjacentTilesOf(tile, TileType.Floor) != 8 && IsWall(Above(tile)) && IsWall(LeftOf(tile)) && IsFloor(LeftOf(Above(tile))) && !ShouldBeFloor(RightOf(Below(tile))) && !ShouldBeFloor(Below(tile)) && !ShouldBeFloor(RightOf(tile)) &&
+                                RightOf(tile).TileType != TileType.WallCornerUpperRight &&
+                                (emptyBelow || (tile.RoomId != Below(tile).RoomId && Below(tile).ShouldBeType == TileType.WallCornerUpperLeft && ShouldBeWall(RightOf(Below(tile))))) &&
+                                (emptyRight || (tile.RoomId != RightOf(tile).RoomId && RightOf(tile).ShouldBeType == TileType.WallCornerUpperLeft && ShouldBeWall(RightOf(Below(tile))))))
+                            {
+                                tile.TileType = TileType.WallCornerLowerRight;
+                            } // Horizontal wall
+                            else if (IsEmpty(Above(tile)) && !IsEmpty(Below(tile)) || !IsEmpty(Above(tile)) && IsEmpty(Below(tile)) && !tile.TileType.ToString().Contains("Corner"))
+                            {
+                                tile.TileType = TileType.WallHorizontal;
+                            } // Vertical Wall
+                            else if (IsEmpty(LeftOf(tile)) && !IsEmpty(RightOf(tile)) || !IsEmpty(LeftOf(tile)) && IsEmpty(RightOf(tile)) && !tile.TileType.ToString().Contains("Corner"))
+                            {
+                                tile.TileType = TileType.WallVertical;
+                            } // Inwards-facing corners
+                            else
+                            {
+                                if (IsEmpty(LeftOf(Above(tile))) &&
+                                    ShouldBeWall(Above(tile)) && ShouldBeWall(LeftOf(tile)) &&
+                                    (IsFloor(Below(i, j)) || IsFloor(RightOf(i, j))))
+                                {
+                                    tile.TileType = TileType.WallCornerInnerLowerRight;
+                                }
+                                else if (IsEmpty(RightOf(Above(tile))) &&
+                                    ShouldBeWall(Above(tile)) && ShouldBeWall(RightOf(tile)) &&
+                                    (IsFloor(Below(i, j)) || IsFloor(LeftOf(i, j))))
+                                {
+                                    tile.TileType = TileType.WallCornerInnerLowerLeft;
+                                }
+                                else if (IsEmpty(LeftOf(Below(tile))) &&
+                                    ShouldBeWall(Below(tile)) && ShouldBeWall(LeftOf(tile)) &&
+                                    (IsFloor(Above(i, j)) || IsFloor(RightOf(i, j))))
+                                {
+                                    tile.TileType = TileType.WallCornerInnerUpperRight;
+                                }
+                                else if (IsEmpty(RightOf(Below(tile))) &&
+                                    ShouldBeWall(Below(tile)) && ShouldBeWall(RightOf(tile)) &&
+                                    (IsFloor(Above(i, j)) || IsFloor(LeftOf(i, j))))
+                                {
+                                    tile.TileType = TileType.WallCornerInnerUpperLeft;
+                                }
                             }
                         }
-                    }
-                    if (type != tile.TileType)
-                    {
-                        changesMade = true;
+                        if (type != tile.TileType)
+                        {
+                            changesMade = true;
+                        }
                     }
                 }
-            }
-            return changesMade;
+            } while (changesMade);
         }
 
         private void CreateRoom(int x, int y, int width, int height, int id)
@@ -217,7 +224,7 @@ namespace PipeHow.DungeonGenerator.Models
                         tile.RoomId = id;
 
                         // Set edges of new room to walls
-                        if ((i == x || i == x + width - 1) || (j == y || j == y + height - 1))
+                        if (i == x || i == x + width - 1 || j == y || j == y + height - 1)
                         {
                             tile.ShouldBeType = TileType.Wall;
                         }
@@ -245,56 +252,53 @@ namespace PipeHow.DungeonGenerator.Models
                         // Find the existing room that the new room intersects with
                         var existingRoom = Rooms.First(r => r.Id == tile.RoomId);
 
-                        // If the tile is within the room but not in the walls, evaluate if inner corner
-                        // Do not set roomid on inner corners
-                        if (existingRoom.IsInRoom(tile) || existingRoom.IsRoomWall(tile))
+                        // If the tile is within the room, evaluate if inner corner
+                        if (existingRoom.IsInRoom(tile))
                         {
                             if (existingRoom.IsRoomWall(tile))
                             {
                                 tile.ShouldBeType = TileType.Wall;
-                            }
 
-                            // Inner upper left
-                            if (i == x && j == y)
-                            {
-                                tile.ShouldBeType = TileType.WallCornerInnerUpperLeft;
-                            } // Inner lower left
-                            else if (i == x && j == y + height - 1)
-                            {
-                                tile.ShouldBeType = TileType.WallCornerInnerLowerLeft;
-                            } // Inner upper right
-                            else if (i == x + width - 1 && j == y)
-                            {
-                                tile.ShouldBeType = TileType.WallCornerInnerUpperRight;
-                            } // Inner lower right
-                            else if (i == x + width - 1 && j == y + height - 1)
-                            {
-                                tile.ShouldBeType = TileType.WallCornerInnerLowerRight;
+                                // If corners
+                                // Outer upper left
+                                if (i == x && j == y)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerUpperLeft;
+                                } // Outer lower left
+                                else if (i == x && j == y + height - 1)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerLowerLeft;
+                                } // Outer upper right
+                                else if (i == x + width - 1 && j == y)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerUpperRight;
+                                } // Outer lower right
+                                else if (i == x + width - 1 && j == y + height - 1)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerLowerRight;
+                                }
                             }
-                        } // If the tile is a wall tile of the existing room
-                        //else if (existingRoom.IsRoomWall(tile))
-                        //{
-                        //    tile.ShouldBeType = TileType.Wall;
-
-                        //    // If corners
-                        //    // Outer upper left
-                        //    if (i == x && j == y)
-                        //    {
-                        //        tile.ShouldBeType = TileType.WallCornerUpperLeft;
-                        //    } // Outer lower left
-                        //    else if (i == x && j == y + height - 1)
-                        //    {
-                        //        tile.ShouldBeType = TileType.WallCornerLowerLeft;
-                        //    } // Outer upper right
-                        //    else if (i == x + width - 1 && j == y)
-                        //    {
-                        //        tile.ShouldBeType = TileType.WallCornerUpperRight;
-                        //    } // Outer lower right
-                        //    else if (i == x + width - 1 && j == y + height - 1)
-                        //    {
-                        //        tile.ShouldBeType = TileType.WallCornerLowerRight;
-                        //    }
-                        //}
+                            else
+                            {
+                                // Inner upper left
+                                if (i == x && j == y)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerInnerUpperLeft;
+                                } // Inner lower left
+                                else if (i == x && j == y + height - 1)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerInnerLowerLeft;
+                                } // Inner upper right
+                                else if (i == x + width - 1 && j == y)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerInnerUpperRight;
+                                } // Inner lower right
+                                else if (i == x + width - 1 && j == y + height - 1)
+                                {
+                                    tile.ShouldBeType = TileType.WallCornerInnerLowerRight;
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -42,19 +42,19 @@ namespace PipeHow.DungeonGenerator.Models
         public bool IsRoomWall(ITile tile)
         {
             // Check if tile is in wall of room
-            return (tile.X == TopLeft.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
+            return IsInRoom(tile) && ((tile.X == TopLeft.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
                     (tile.X == BottomRight.X && (tile.Y >= TopLeft.Y || tile.Y <= BottomRight.Y)) ||
                     (tile.Y == TopLeft.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X)) ||
-                    (tile.Y == BottomRight.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X));
+                    (tile.Y == BottomRight.Y && (tile.X >= TopLeft.X || tile.X <= BottomRight.X)));
         }
 
         public bool IsInRoom(ITile tile)
         {
             // Check if tile is within walls of room
-            return tile.X > TopLeft.X
-                && tile.X < BottomRight.X
-                && tile.Y > TopLeft.Y
-                && tile.Y < BottomRight.Y;
+            return tile.X >= TopLeft.X
+                && tile.X <= BottomRight.X
+                && tile.Y >= TopLeft.Y
+                && tile.Y <= BottomRight.Y;
         }
 
         public Tuple<int,int> GetRandomWallTile()
@@ -85,6 +85,6 @@ namespace PipeHow.DungeonGenerator.Models
             return new Tuple<int, int>(x, y);
         }
 
-        public override string ToString() => $"{Id}[{TopLeft.X},{TopLeft.X}>{BottomRight.X},{BottomRight.X}]";
+        public override string ToString() => $"{Id}[{TopLeft.X},{TopLeft.Y}>{BottomRight.X},{BottomRight.Y}]";
     }
 }
