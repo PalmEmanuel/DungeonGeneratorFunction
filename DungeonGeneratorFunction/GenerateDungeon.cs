@@ -27,9 +27,10 @@ namespace PipeHow.DungeonGenerator
             int roomCount = 8;
             if (req.Query.ContainsKey("roomCount"))
             {
-                if (!int.TryParse(req.Query["roomCount"], out roomCount))
+                bool parsedRoomCount = int.TryParse(req.Query["roomCount"], out roomCount);
+                if (!parsedRoomCount || roomCount < 1)
                 {
-                    return new BadRequestObjectResult("Please provide width and height as numbers, or leave them out.");
+                    return new BadRequestObjectResult("Please provide the roomCount as a number above 0.");
                 }
             }
 

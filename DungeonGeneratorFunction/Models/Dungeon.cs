@@ -31,10 +31,6 @@ namespace PipeHow.DungeonGenerator.Models
             Rooms = new List<IRoom>();
         }
 
-        // Default max size of message in discord is 2000 characters
-        // Square root of 2000 is just below 45
-        public static IDungeon CreateDungeon() { return CreateDungeon(42, 42, 8); }
-
         public static IDungeon CreateDungeon(int width, int height, int roomCount)
         {
             Dungeon dungeon = new Dungeon();
@@ -59,7 +55,7 @@ namespace PipeHow.DungeonGenerator.Models
             dungeon.CreateRoom(originX, originY, 6, 6, 1);
 
             Random rand = new Random();
-            for (int i = 0; i < roomCount; i++)
+            for (int i = 0; i < roomCount - 1; i++)
             {
                 int xPos = rand.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
                 int yPos = rand.Next(-originY / 2 + 5, originY / 2 - 5) + originY;

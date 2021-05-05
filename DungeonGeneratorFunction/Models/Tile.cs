@@ -3,25 +3,25 @@
     public enum TileType
     {
         // Different whitespace between empty and floor needed
-        Empty = 'X',
-        Floor = ' ',
-        Wall = 'W',
-        WallVertical = '│',
-        WallHorizontal = '─',
-        WallCross = '┼',
-        WallVerticalSeparatorLeft = '┤',
-        WallVerticalSeparatorRight = '├',
-        WallHorizontalSeparatorUp = '┴',
-        WallHorizontalSeparatorDown = '┬',
-        WallCornerUpperRight = '┐',
-        WallCornerUpperLeft = '┌',
-        WallCornerLowerRight = '┘',
-        WallCornerLowerLeft = '└',
-        WallCornerInnerUpperRight = '┓',
-        WallCornerInnerUpperLeft = '┏',
-        WallCornerInnerLowerRight = '┛',
-        WallCornerInnerLowerLeft = '┗',
-        Door = 'D'
+        Empty,
+        Floor,
+        Wall,
+        WallVertical,
+        WallHorizontal,
+        WallCross,
+        WallVerticalSeparatorLeft,
+        WallVerticalSeparatorRight,
+        WallHorizontalSeparatorUp,
+        WallHorizontalSeparatorDown,
+        WallCornerUpperRight,
+        WallCornerUpperLeft,
+        WallCornerLowerRight,
+        WallCornerLowerLeft,
+        WallCornerInnerUpperRight,
+        WallCornerInnerUpperLeft,
+        WallCornerInnerLowerRight,
+        WallCornerInnerLowerLeft,
+        Door
     }
 
     public interface ITile
