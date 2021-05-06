@@ -1,13 +1,14 @@
 ﻿using System;
 
-namespace PipeHow.DungeonGenerator.Models
+namespace PipeHow.DungeonMastery.Dungeon
 {
     public enum RoomType
     {
-        Room
+        Room,
+        Corridor
     }
 
-    public interface IRoom
+    public interface IDungeonRoom
     {
         int Id { get; set; }
         RoomType RoomType { get; set; }
@@ -19,9 +20,13 @@ namespace PipeHow.DungeonGenerator.Models
         bool IsRoomCorner(ITile tile);
         bool IsRoomWall(ITile tile);
         bool IsInRoom(ITile tile);
+        /// <summary>
+        /// Gets the position of a random, non-corner, wall tile in the room.
+        /// </summary>
+        Tuple<int, int> GetRandomWallPosition(Random random);
     }
 
-    public class Room : IRoom
+    public class DungeonRoom : IDungeonRoom
     {
         public int Id { get; set; }
         public RoomType RoomType { get; set; }
@@ -57,11 +62,10 @@ namespace PipeHow.DungeonGenerator.Models
                 && tile.Y <= BottomRight.Y;
         }
 
-        public Tuple<int,int> GetRandomWallTile()
+        public Tuple<int,int> GetRandomWallPosition(Random random)
         {
             // Select which axis to randomize
-            Random rand = new Random();
-            string randomAxis = new[] { "X", "Y" }[rand.Next(0, 2)];
+            string randomAxis = new[] { "X", "Y" }[random.Next(0, 2)];
 
             // Create and initialize output variables
             int x, y;
@@ -70,15 +74,16 @@ namespace PipeHow.DungeonGenerator.Models
             {
                 case "X":
                     // Randomize top or bottom
-                    y = new[] { TopLeft.Y, BottomRight.Y }[rand.Next(0, 2)];
+                    y = new[] { TopLeft.Y, BottomRight.Y }[random.Next(0, 2)];
 
-                    x = rand.Next(TopLeft.X, BottomRight.X + 1);
+                    // Exclude corners
+                    x = random.Next(TopLeft.X + 1, BottomRight.X);
                     break;
                 case "Y":
                     // Randomize left or right
-                    x = new[] { TopLeft.X, BottomRight.X }[rand.Next(0, 2)];
+                    x = new[] { TopLeft.X, BottomRight.X }[random.Next(0, 2)];
 
-                    y = rand.Next(TopLeft.Y, BottomRight.Y + 1);
+                    y = random.Next(TopLeft.Y + 1, BottomRight.Y);
                     break;
             }
 

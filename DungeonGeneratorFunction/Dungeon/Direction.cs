@@ -1,4 +1,4 @@
-﻿namespace PipeHow.DungeonGenerator.Models
+﻿namespace PipeHow.DungeonMastery.Dungeon
 {
     public enum Direction
     {

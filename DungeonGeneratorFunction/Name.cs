@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-namespace PipeHow.DungeonGenerator
+namespace PipeHow.DungeonMastery
 {
     public static class Name
     {

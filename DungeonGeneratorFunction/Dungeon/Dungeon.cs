@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace PipeHow.DungeonGenerator.Models
+namespace PipeHow.DungeonMastery.Dungeon
 {
     public interface IDungeon
     {
@@ -14,6 +14,16 @@ namespace PipeHow.DungeonGenerator.Models
         /// The map is from top left to bottom right, first index is x, second is y.
         /// </summary>
         List<List<ITile>> Map { get; set; }
+        List<IDungeonRoom> Rooms { get; set; }
+        
+        /// <summary>
+        /// The random generator used for all randomization in the dungeon.
+        /// </summary>
+        Random Random { get; set; }
+        /// <summary>
+        /// The seed used for the specific dungeon.
+        /// </summary>
+        int Seed { get; set; }
     }
 
     public class Dungeon : IDungeon
@@ -23,17 +33,26 @@ namespace PipeHow.DungeonGenerator.Models
 
         public List<List<ITile>> Map { get; set; }
 
-        private List<IRoom> Rooms { get; set; }
+        public List<IDungeonRoom> Rooms { get; set; }
+
+        public Random Random { get; set; }
+        public int Seed { get; set; }
 
         public Dungeon ()
         {
             Map = new List<List<ITile>>();
-            Rooms = new List<IRoom>();
+            Rooms = new List<IDungeonRoom>();
         }
 
-        public static IDungeon CreateDungeon(int width, int height, int roomCount)
+        public static IDungeon CreateDungeon(int width, int height, int roomMinSize = 4, int roomMaxSize = 8, int roomCount = 7, int seed = 0)
         {
             Dungeon dungeon = new Dungeon();
+
+            // If seed not provided, create seed
+            dungeon.Seed = seed == 0 ? Environment.TickCount : seed;
+            dungeon.Random = new Random(dungeon.Seed);
+
+            Console.WriteLine($"Seed: {dungeon.Seed}");
 
             int originX = width / 2;
             int originY = height / 2;
@@ -52,22 +71,50 @@ namespace PipeHow.DungeonGenerator.Models
             }
 
             // Create first room in center
-            dungeon.CreateRoom(originX, originY, 6, 6, 1);
+            int roomWidth = dungeon.Random.Next(roomMinSize, roomMaxSize);
+            int roomHeight = dungeon.Random.Next(roomMinSize, roomMaxSize);
+            dungeon.CreateRoom(originX, originY, roomWidth, roomHeight, 1);
 
-            Random rand = new Random();
-            for (int i = 0; i < roomCount - 1; i++)
+            // TODO: Evaluate logic where all rooms are placed first and corridors are placed between them
+            // TODO: Also try with forcing a different direction from the last corridor
+            for (int i = 0; i < roomCount-1; i++)
             {
-                int xPos = rand.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
-                int yPos = rand.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
-                int xSize = rand.Next(3, originX / 4);
-                int ySize = rand.Next(3, originY / 4);
-                // Create room with id 2 and onwards
-                dungeon.CreateRoom(xPos, yPos, xSize, ySize, i + 2);
-                //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
-                Console.WriteLine($"dungeon.CreateRoom({xPos}, {yPos}, {xSize}, {ySize},{i + 2});");
+                bool createdCorridor = false;
+                ITile wallTile;
+                Tuple<int, int> wallPos;
+                while (!createdCorridor)
+                {
+                    // Get a random wall tile from the first room
+                    wallPos = dungeon.Rooms.Last().GetRandomWallPosition(dungeon.Random);
+                    wallTile = dungeon.Map[wallPos.Item1][wallPos.Item2];
+
+                    // Create a corridor to the next room
+                    int corridorWidth = dungeon.Random.Next(3, 5);
+                    int corridorLength = dungeon.Random.Next(6, 12);
+                    createdCorridor = dungeon.CreateCorridor(wallTile, corridorWidth, corridorLength, dungeon.Rooms.Count() + 1);
+                }
+
+                wallPos = dungeon.Rooms.Last().GetRandomWallPosition(dungeon.Random);
+                wallTile = dungeon.Map[wallPos.Item1][wallPos.Item2];
+                roomWidth = dungeon.Random.Next(roomMinSize, roomMaxSize);
+                roomHeight = dungeon.Random.Next(roomMinSize, roomMaxSize);
+                dungeon.CreateRoom(wallTile.X, wallTile.Y, roomWidth, roomHeight, dungeon.Rooms.Count() + 1);
             }
-            // After adding all rooms, make sure the non-walls are floor
+
+            //for (int i = 0; i < roomCount - 1; i++)
+            //{
+            //    int xPos = dungeon.Random.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
+            //    int yPos = dungeon.Random.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
+            //    int xSize = dungeon.Random.Next(3, originX / 4);
+            //    int ySize = dungeon.Random.Next(3, originY / 4);
+            //    // Create room with id 2 and onwards
+            //    dungeon.CreateRoom(xPos, yPos, xSize, ySize, i + 2);
+            //    //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
+            //    Console.WriteLine($"dungeon.CreateRoom({xPos}, {yPos}, {xSize}, {ySize},{i + 2});");
+            //}
+            // After adding all rooms, make sure the non-walls in intersecting rooms are floor
             dungeon.FillCommonFloor();
+
             // Set walls based on tiles relative types and positions to each other
             dungeon.AddWalls();
 
@@ -192,13 +239,62 @@ namespace PipeHow.DungeonGenerator.Models
             } while (changesMade);
         }
 
+        private bool CreateCorridor(ITile tile, int width, int length, int id)
+        {
+            // TODO: Set width or length to edge instead?
+            if (tile.X + length > sizeX - 1 ||
+                tile.Y + length > sizeY - 1 ||
+                tile.X - length < 2 ||
+                tile.Y - length < 2)
+            {
+                return false;
+            }
+            var direction = tile.Direction;
+            ITile topLeft, bottomRight;
+            // Offset by half of the width, plus 1 if uneven
+            int offset = (width/2) + ((width / 2) % 2);
+            // Decide which direction to place corridor
+            switch (direction)
+            {
+                case Direction.WEST:
+                    topLeft = Map[tile.X - length + 1][tile.Y - offset];
+                    bottomRight = Map[tile.X + 1][tile.Y + width - offset];
+                    break;
+                case Direction.EAST:
+                    topLeft = Map[tile.X - 1][tile.Y - offset];
+                    bottomRight = Map[tile.X + length - 1][tile.Y + width - offset];
+                    break;
+                case Direction.NORTH:
+                    topLeft = Map[tile.X - width + offset][tile.Y - length + 1];
+                    bottomRight = Map[tile.X + offset][tile.Y + 1];
+                    break;
+                case Direction.SOUTH:
+                    topLeft = Map[tile.X - offset][tile.Y - 1];
+                    bottomRight = Map[tile.X + width - offset][tile.Y + length - 1];
+                    break;
+                default:
+                    throw new ArgumentException("Unknown direction!");
+            }
+
+            // TODO: Decide placement logic in IsViableCorridor. Only separate rooms, or allow intersection?
+            if (!IsViableCorridor(topLeft, bottomRight))
+            {
+                return false;
+            }
+            CreateRoom(topLeft.X, topLeft.Y, bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y, id);
+
+            Rooms.Last().RoomType = RoomType.Corridor;
+
+            return true;
+        }
+
         private void CreateRoom(int x, int y, int width, int height, int id)
         {
             // Make sure x and y don't go outside the map
-            if (x < 0 || y < 0) throw new ArgumentException("Ensure that x and y are not negative!");
+            if (x < 2 || y < 2) throw new ArgumentException("Ensure that x and y are not negative!");
             // If x or y plus requested rectangle size is outside map bounds, set to edge of map
-            x = x + width > sizeY - 1 ? width - sizeY : x;
-            y = y + height > sizeX - 1 ? height - sizeX : y;
+            x = x + width > sizeY - 1 ? sizeY - width - 2: x;
+            y = y + height > sizeX - 1 ? sizeX - height - 2: y;
 
             if (width < 3 || height < 3)
             {
@@ -211,6 +307,48 @@ namespace PipeHow.DungeonGenerator.Models
                 for (int j = y; j < y + height; j++)
                 {
                     ITile tile = Map[i][j];
+
+                    // Calculate tile Direction from room center by measuring whether the x or y is further from the center, relative to room size
+                    int roomCenterX = x + (width / 2);
+                    int roomCenterY = y + (height / 2);
+                    float distancePercentageUnitX = (float)width / 2 / 100;
+                    float distancePercentageUnitY = (float)height / 2 / 100;
+
+                    // Get distance from center in percentage of room size
+                    int distanceX = (int)(Math.Abs(i - roomCenterX) / distancePercentageUnitX);
+                    int distanceY = (int)(Math.Abs(i - roomCenterY) / distancePercentageUnitY);
+                    // If the tile is horizontally further away from the center than vertically, relative to room size
+                    if (distanceX > distanceY)
+                    {
+                        // West if the tile is left of or at the room center, otherwise east
+                        // This means there's a slight bias for the middle tile
+                        tile.Direction = i <= roomCenterX ? Direction.WEST : Direction.EAST;
+
+                    } // Vertically further away than horizontally
+                    else if (distanceY > distanceX)
+                    {
+                        tile.Direction = j <= roomCenterY ? Direction.NORTH : Direction.SOUTH;
+                    }
+                    else
+                    {
+                        // If the tile is equally far away from the center horizontally and vertically, pick random
+                        if (i <= roomCenterX && j <= roomCenterY)
+                        {
+                            tile.Direction = RandomDirection(Direction.WEST, Direction.NORTH);
+                        }
+                        else if (i <= roomCenterX && j > roomCenterY)
+                        {
+                            tile.Direction = RandomDirection(Direction.WEST, Direction.SOUTH);
+                        }
+                        else if (i > roomCenterX && j <= roomCenterY)
+                        {
+                            tile.Direction = RandomDirection(Direction.EAST, Direction.NORTH);
+                        }
+                        else if (i > roomCenterX && j > roomCenterY)
+                        {
+                            tile.Direction = RandomDirection(Direction.EAST, Direction.SOUTH);
+                        }
+                    }
 
                     // If the created room is on a new space, set id and corners
                     if (tile.RoomId == 0)
@@ -301,8 +439,9 @@ namespace PipeHow.DungeonGenerator.Models
                 }
             }
 
-            Rooms.Add(new Room
+            Rooms.Add(new DungeonRoom
             {
+                RoomType = RoomType.Room,
                 Id = id,
                 TopLeft = Map[x][y],
                 BottomRight = Map[x + width - 1][y + height - 1],
@@ -382,6 +521,29 @@ namespace PipeHow.DungeonGenerator.Models
             }
 
             return sb.ToString();
+        }
+
+        private bool IsViableCorridor(ITile topLeft, ITile bottomRight)
+        {
+            if (bottomRight.X > sizeX - 1 ||
+                bottomRight.Y > sizeY - 1 ||
+                topLeft.X < 2 ||
+                topLeft.Y < 2)
+            {
+                return false;
+            }
+            //for (int i = topLeft.X; i < bottomRight.X; i++)
+            //{
+            //    for (int j = topLeft.Y; j < bottomRight.Y; j++)
+            //    {
+            //        if (IsEmpty(Map[i][j]))
+            //        {
+            //            return false;
+            //        }
+            //    }
+            //}
+
+            return true;
         }
 
         private bool IsEmpty(int x, int y)
@@ -555,6 +717,11 @@ namespace PipeHow.DungeonGenerator.Models
         private ITile Below(int x, int y)
         {
             return Map[x][y + 1];
+        }
+
+        private Direction RandomDirection(params Direction[] directions)
+        {
+            return directions[Random.Next(directions.Count())];
         }
     }
 }

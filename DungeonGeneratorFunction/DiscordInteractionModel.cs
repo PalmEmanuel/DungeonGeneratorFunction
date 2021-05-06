@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace PipeHow.DungeonGenerator
+namespace PipeHow.DungeonMastery
 {
     internal class DiscordInteractionModel
     {

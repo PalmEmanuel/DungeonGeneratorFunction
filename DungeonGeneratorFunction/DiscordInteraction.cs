@@ -10,9 +10,9 @@ using Newtonsoft.Json;
 using System.Text;
 using Chaos.NaCl;
 using System.Linq;
-using PipeHow.DungeonGenerator.Models;
+using PipeHow.DungeonMastery.Dungeon;
 
-namespace PipeHow.DungeonGenerator
+namespace PipeHow.DungeonMastery
 {
     public static class DiscordInteraction
     {
@@ -72,9 +72,14 @@ namespace PipeHow.DungeonGenerator
                 {
                     case "dungeon":
                         log.LogInformation("Dungeon requested.");
-                        // Default max size of message in discord is 2000 characters
+
+                        // Use 9 digits from interaction id for a seed, enabling recreation of generated maps
+                        int seed = int.Parse(data.Id.Substring(0, 9));
+                        log.LogInformation($"Seed: {seed}");
+
+                            // Default max size of message in discord is 2000 characters
                         // Square root of 2000 is just below 45, which is 43 + whitespace
-                        string dungeon = Dungeon.CreateDungeon(43, 43, 9).ToString();
+                        string dungeon = Dungeon.Dungeon.CreateDungeon(43, 43, seed: seed).ToString();
 
                         // Create discord message
                         var message = $"```\n{dungeon}\n```";
