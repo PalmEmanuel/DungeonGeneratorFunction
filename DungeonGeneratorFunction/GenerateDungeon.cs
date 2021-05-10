@@ -5,6 +5,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using PipeHow.DungeonMastery.RandomDungeon;
 using PipeHow.DungeonMastery.RandomDungeon.Dungeondraft;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -62,18 +63,36 @@ namespace PipeHow.DungeonMastery
                 }
             }
 
+            string output = "string";
+            if (req.Query.ContainsKey("output"))
+            {
+                output = req.Query["output"];
+                if (!new string[] { "string", "dungeondraft" }.Contains(output))
+                {
+                    return new BadRequestObjectResult("Please provide a valid output type or leave it out!");
+                }
+            }
+
             // http://roguebasin.roguelikedevelopment.org/index.php?title=Dungeon-Building_Algorithm
             // TODO: Add configuration DI for other symbols etc
             IDungeon dungeon = Dungeon.CreateDungeon(width, height, roomMinSize, roomMaxSize, roomCount, seed);
-            string responseMessage = dungeon.ToString();
-            log.LogInformation(responseMessage);
-            return new FileContentResult(Encoding.UTF8.GetBytes(dungeon.ToDungeondraftMap()), "application/json")
-            {
-                FileDownloadName = $"Dungeon{dungeon.Seed}.dungeondraft_map"
-            };
-            //responseMessage += $"\n{dungeon.ToDungeondraftMap()}";
 
-            //return new OkObjectResult(responseMessage);
+            if (output == "string")
+            {
+                string responseMessage = dungeon.ToString();
+                return new OkObjectResult(responseMessage);
+            }
+            else if (output == "dungeondraft")
+            {
+                return new FileContentResult(Encoding.UTF8.GetBytes(dungeon.ToDungeondraftMap()), "application/json")
+                {
+                    FileDownloadName = $"Dungeon_{dungeon.Seed}.dungeondraft_map"
+                };
+            }
+            else
+            {
+                return new BadRequestObjectResult("Please provide a valid output type or leave it out!");
+            }
         }
     }
 }
