@@ -1,4 +1,4 @@
-﻿namespace PipeHow.DungeonMastery.Dungeon
+﻿namespace PipeHow.DungeonMastery.RandomDungeon
 {
     public enum TileType
     {
@@ -26,6 +26,7 @@
 
     public interface ITile
     {
+        string Id { get; }
         int RoomId { get; set; }
         int Y { get; set; }
         int X { get; set; }
@@ -39,6 +40,7 @@
     }
     public class Tile : ITile
     {
+        public string Id { get => $"{X}X{Y}Y"; }
         public int RoomId { get; set; }
         public int Y { get; set; }
         public int X { get; set; }

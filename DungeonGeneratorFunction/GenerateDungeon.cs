@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using PipeHow.DungeonMastery.Dungeon;
+using PipeHow.DungeonMastery.RandomDungeon;
+using PipeHow.DungeonMastery.RandomDungeon.Dungeondraft;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PipeHow.DungeonMastery
@@ -62,10 +64,16 @@ namespace PipeHow.DungeonMastery
 
             // http://roguebasin.roguelikedevelopment.org/index.php?title=Dungeon-Building_Algorithm
             // TODO: Add configuration DI for other symbols etc
-            IDungeon dungeon = Dungeon.Dungeon.CreateDungeon(width, height, roomMinSize, roomMaxSize, roomCount, seed);
+            IDungeon dungeon = Dungeon.CreateDungeon(width, height, roomMinSize, roomMaxSize, roomCount, seed);
             string responseMessage = dungeon.ToString();
+            log.LogInformation(responseMessage);
+            return new FileContentResult(Encoding.UTF8.GetBytes(dungeon.ToDungeondraftMap()), "application/json")
+            {
+                FileDownloadName = $"Dungeon{dungeon.Seed}.dungeondraft_map"
+            };
+            //responseMessage += $"\n{dungeon.ToDungeondraftMap()}";
 
-            return new OkObjectResult(responseMessage);
+            //return new OkObjectResult(responseMessage);
         }
     }
 }

@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace PipeHow.DungeonMastery.Dungeon
+namespace PipeHow.DungeonMastery.RandomDungeon
 {
     public interface IDungeon
     {
-        int sizeX { get; set; }
-        int sizeY { get; set; }
+        int Width { get; set; }
+        int Height { get; set; }
         /// <summary>
         /// The map is from top left to bottom right, first index is x, second is y.
         /// </summary>
@@ -24,12 +24,18 @@ namespace PipeHow.DungeonMastery.Dungeon
         /// The seed used for the specific dungeon.
         /// </summary>
         int Seed { get; set; }
+
+        public ITile RightOf(ITile tile);
+        public ITile LeftOf(ITile tile);
+        public ITile Above(ITile tile);
+        public ITile Below(ITile tile);
+        public bool IsCorner(ITile tile);
     }
 
     public class Dungeon : IDungeon
     {
-        public int sizeX { get; set; }
-        public int sizeY { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
 
         public List<List<ITile>> Map { get; set; }
 
@@ -57,8 +63,8 @@ namespace PipeHow.DungeonMastery.Dungeon
             int originX = width / 2;
             int originY = height / 2;
 
-            dungeon.sizeY = width;
-            dungeon.sizeX = height;
+            dungeon.Height = width;
+            dungeon.Width = height;
 
             // Initialize dungeon map tiles
             for (int i = 0; i < width; i++)
@@ -242,8 +248,8 @@ namespace PipeHow.DungeonMastery.Dungeon
         private bool CreateCorridor(ITile tile, int width, int length, int id)
         {
             // TODO: Set width or length to edge instead?
-            if (tile.X + length > sizeX - 1 ||
-                tile.Y + length > sizeY - 1 ||
+            if (tile.X + length > Width - 1 ||
+                tile.Y + length > Height - 1 ||
                 tile.X - length < 2 ||
                 tile.Y - length < 2)
             {
@@ -293,8 +299,8 @@ namespace PipeHow.DungeonMastery.Dungeon
             // Make sure x and y don't go outside the map
             if (x < 2 || y < 2) throw new ArgumentException("Ensure that x and y are not negative!");
             // If x or y plus requested rectangle size is outside map bounds, set to edge of map
-            x = x + width > sizeY - 1 ? sizeY - width - 2: x;
-            y = y + height > sizeX - 1 ? sizeX - height - 2: y;
+            x = x + width > Height - 1 ? Height - width - 2: x;
+            y = y + height > Width - 1 ? Width - height - 2: y;
 
             if (width < 3 || height < 3)
             {
@@ -520,13 +526,15 @@ namespace PipeHow.DungeonMastery.Dungeon
                 sb.AppendLine("");
             }
 
-            return sb.ToString();
+            // Stamp map with seed
+            string seedString = $"{Seed}";
+            return string.Join("", sb.ToString().Substring(0, sb.Length - seedString.Length - 2), seedString);
         }
 
         private bool IsViableCorridor(ITile topLeft, ITile bottomRight)
         {
-            if (bottomRight.X > sizeX - 1 ||
-                bottomRight.Y > sizeY - 1 ||
+            if (bottomRight.X > Width - 1 ||
+                bottomRight.Y > Height - 1 ||
                 topLeft.X < 2 ||
                 topLeft.Y < 2)
             {
@@ -546,19 +554,19 @@ namespace PipeHow.DungeonMastery.Dungeon
             return true;
         }
 
-        private bool IsEmpty(int x, int y)
+        internal bool IsEmpty(int x, int y)
         {
             return IsEmpty(Map[x][y]);
         }
-        private bool IsEmpty(ITile tile)
+        internal bool IsEmpty(ITile tile)
         {
             return tile.TileType == TileType.Empty;
         }
-        private bool IsFloor(int x, int y)
+        internal bool IsFloor(int x, int y)
         {
             return IsFloor(Map[x][y]);
         }
-        private bool IsFloor(ITile tile)
+        internal bool IsFloor(ITile tile)
         {
             return tile.TileType == TileType.Floor;
         }
@@ -570,12 +578,12 @@ namespace PipeHow.DungeonMastery.Dungeon
         {
             return tile.ShouldBeType == TileType.Floor;
         }
-        private bool IsWall(int x, int y)
+        internal bool IsWall(int x, int y)
         {
             return IsWall(Map[x][y]);
         }
 
-        private int AdjacentTilesOf(ITile tile, TileType type)
+        internal int AdjacentTilesOf(ITile tile, TileType type)
         {
             // Create a list with the 8 adjacent tiles and return the amount matching the type
             return new List<ITile>
@@ -591,22 +599,14 @@ namespace PipeHow.DungeonMastery.Dungeon
             }.Count(t => t.TileType == type);
         }
 
-        private int AdjacentTilesOf(ITile tile, string fuzzyType)
+        public bool IsCorner(ITile tile)
         {
-            // Create a list with the 8 adjacent tiles and return the amount matching the type
-            return new List<ITile>
-            {
-                Above(tile),
-                Above(LeftOf(tile)),
-                Above(RightOf(tile)),
-                Below(tile),
-                Below(LeftOf(tile)),
-                Below(RightOf(tile)),
-                LeftOf(tile),
-                RightOf(tile),
-            }.Count(t => t.TileType.ToString().Contains(fuzzyType));
+            return tile.ShouldBeType.ToString().Contains("Corner");
         }
-
+        private bool IsCorner(int x, int y)
+        {
+            return IsCorner(Map[x][y]);
+        }
         private bool ShouldBeWall(int x, int y)
         {
             return ShouldBeWall(Map[x][y]);
@@ -616,71 +616,7 @@ namespace PipeHow.DungeonMastery.Dungeon
             return tile.ShouldBeType.ToString().Contains("Wall");
         }
 
-        private bool IsViableCorner(ITile tile)
-        {
-            if (AdjacentTilesOf(tile, TileType.Floor) == 8 ||
-                (tile.ShouldBeCorner() && !Above(tile).ShouldBeCorner() && !Below(tile).ShouldBeCorner()) ||
-                (tile.ShouldBeCorner() && !RightOf(tile).ShouldBeCorner() && !LeftOf(tile).ShouldBeCorner()))
-            {
-                return false;
-            }
-
-            switch (tile.ShouldBeType)
-            {
-                case TileType.WallCornerUpperRight:
-                    return !ShouldBeFloor(Above(tile))
-                        && !ShouldBeFloor(RightOf(tile))
-                        && !ShouldBeFloor(RightOf(Above(tile)))
-                        && ShouldBeFloor(LeftOf(Below(tile)));
-                    break;
-                case TileType.WallCornerUpperLeft:
-                    return !ShouldBeFloor(Above(tile))
-                        && !ShouldBeFloor(LeftOf(tile))
-                        && !ShouldBeFloor(LeftOf(Above(tile)))
-                        && ShouldBeFloor(RightOf(Below(tile)));
-                    break;
-                case TileType.WallCornerLowerRight:
-                    return !ShouldBeFloor(Below(tile))
-                        && !ShouldBeFloor(RightOf(tile))
-                        && !ShouldBeFloor(RightOf(Below(tile)))
-                        && ShouldBeFloor(LeftOf(Above(tile)));
-                    break;
-                case TileType.WallCornerLowerLeft:
-                    return !ShouldBeFloor(Below(tile))
-                        && !ShouldBeFloor(LeftOf(tile))
-                        && !ShouldBeFloor(LeftOf(Below(tile)))
-                        && ShouldBeFloor(RightOf(Above(tile)));
-                    break;
-                case TileType.WallCornerInnerUpperRight:
-                    return !IsEmpty(Above(tile))
-                        && !IsEmpty(RightOf(tile))
-                        && !IsEmpty(RightOf(Above(tile)))
-                        && IsEmpty(LeftOf(Below(tile)));
-                    break;
-                case TileType.WallCornerInnerUpperLeft:
-                    return !IsEmpty(Above(tile))
-                        && !IsEmpty(LeftOf(tile))
-                        && !IsEmpty(LeftOf(Above(tile)))
-                        && IsEmpty(RightOf(Below(tile)));
-                    break;
-                case TileType.WallCornerInnerLowerRight:
-                    return !IsEmpty(Below(tile))
-                        && !IsEmpty(RightOf(tile))
-                        && !IsEmpty(RightOf(Below(tile)))
-                        && IsEmpty(LeftOf(Above(tile)));
-                    break;
-                case TileType.WallCornerInnerLowerLeft:
-                    return !IsEmpty(Below(tile))
-                        && !IsEmpty(LeftOf(tile))
-                        && !IsEmpty(LeftOf(Below(tile)))
-                        && IsEmpty(RightOf(Above(tile)));
-                    break;
-            }
-
-            return false;
-        }
-
-        private bool IsWall(ITile tile)
+        internal bool IsWall(ITile tile)
         {
             return tile.TileType.ToString().Contains("Wall");
         }
@@ -698,22 +634,22 @@ namespace PipeHow.DungeonMastery.Dungeon
                 && (Regex.IsMatch(LeftOf(x, y).ShouldBeType.ToString(), "WallHorizontal") || Regex.IsMatch(LeftOf(x, y).ShouldBeType.ToString(), "WallCorner(Lower|Upper)Right"))
                 && (Regex.IsMatch(RightOf(x, y).ShouldBeType.ToString(), "WallHorizontal") || Regex.IsMatch(RightOf(x, y).ShouldBeType.ToString(), "WallCorner(Lower|Upper)Left"));
         }
-        private ITile LeftOf(ITile tile) => LeftOf(tile.X, tile.Y);
+        public ITile LeftOf(ITile tile) => LeftOf(tile.X, tile.Y);
         private ITile LeftOf(int x, int y)
         {
             return Map[x - 1][y];
         }
-        private ITile RightOf(ITile tile) => RightOf(tile.X, tile.Y);
+        public ITile RightOf(ITile tile) => RightOf(tile.X, tile.Y);
         private ITile RightOf(int x, int y)
         {
             return Map[x + 1][y];
         }
-        private ITile Above(ITile tile) => Above(tile.X, tile.Y);
+        public ITile Above(ITile tile) => Above(tile.X, tile.Y);
         private ITile Above(int x, int y)
         {
             return Map[x][y - 1];
         }
-        private ITile Below(ITile tile) => Below(tile.X, tile.Y);
+        public ITile Below(ITile tile) => Below(tile.X, tile.Y);
         private ITile Below(int x, int y)
         {
             return Map[x][y + 1];

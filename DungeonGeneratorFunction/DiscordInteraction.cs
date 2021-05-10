@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 using System.Text;
 using Chaos.NaCl;
 using System.Linq;
-using PipeHow.DungeonMastery.Dungeon;
+using PipeHow.DungeonMastery.RandomDungeon;
 
 namespace PipeHow.DungeonMastery
 {
@@ -79,7 +79,7 @@ namespace PipeHow.DungeonMastery
 
                             // Default max size of message in discord is 2000 characters
                         // Square root of 2000 is just below 45, which is 43 + whitespace
-                        string dungeon = Dungeon.Dungeon.CreateDungeon(43, 43, seed: seed).ToString();
+                        string dungeon = RandomDungeon.Dungeon.CreateDungeon(43, 43, seed: seed).ToString();
 
                         // Create discord message
                         var message = $"```\n{dungeon}\n```";
