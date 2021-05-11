@@ -12,7 +12,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
         {
             DungeondraftMap dungeondraftMap = new DungeondraftMap();
 
-            var allCorners = dungeon.Map.SelectMany(r => r).Where(t => t.TileType.ToString().Contains("Corner"));
+            var allCorners = dungeon.Map.SelectMany(r => r).Where(t => dungeon.IsCorner(t) || t.TileType == TileType.WallCross);
 
             // Create a list of lists to sort corners outlining the map in the right order, to allow for proper wall vector creation in Dungeondraft
             List<List<ITile>> cornerLists = new List<List<ITile>> {
@@ -24,46 +24,47 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
                 }
             };
 
-            var currentCornerList = cornerLists.First();
-
             // Start searching to the right
             Func<ITile, ITile> searchMethod = dungeon.RightOf;
+            bool clockwise = true;
 
             // Loop until we found all corners on map
             bool foundAllCorners = false;
             while (!foundAllCorners)
             {
+                var currentCornerList = cornerLists.Last();
                 var lastCorner = currentCornerList.Last();
 
+                // Search clockwise
                 switch (lastCorner.TileType)
                 {
                     case TileType.WallCross:
-                        // If the wall we found is a cross, keep searching in the same direction
-                        //searchMethod = searchMethod;
+                        // If the wall we found is a cross, keep searching but invert the next direction change
+                        clockwise = !clockwise;
                         break;
                     case TileType.WallCornerUpperRight:
-                        searchMethod = dungeon.Below;
+                        searchMethod = clockwise ? (Func <ITile, ITile>)dungeon.Below : dungeon.LeftOf;
                         break;
                     case TileType.WallCornerUpperLeft:
-                        searchMethod = dungeon.RightOf;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.RightOf : dungeon.Below;
                         break;
                     case TileType.WallCornerLowerRight:
-                        searchMethod = dungeon.LeftOf;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.LeftOf : dungeon.Above;
                         break;
                     case TileType.WallCornerLowerLeft:
-                        searchMethod = dungeon.Above;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.Above : dungeon.RightOf;
                         break;
                     case TileType.WallCornerInnerUpperRight:
-                        searchMethod = dungeon.LeftOf;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.LeftOf : dungeon.Below;
                         break;
                     case TileType.WallCornerInnerUpperLeft:
-                        searchMethod = dungeon.Below;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.Below : dungeon.RightOf;
                         break;
                     case TileType.WallCornerInnerLowerRight:
-                        searchMethod = dungeon.Above;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.Above : dungeon.LeftOf;
                         break;
                     case TileType.WallCornerInnerLowerLeft:
-                        searchMethod = dungeon.RightOf;
+                        searchMethod = clockwise ? (Func<ITile, ITile>)dungeon.RightOf : dungeon.Above;
                         break;
                     default:
                         throw new ArgumentException("Not a valid corner type!");
@@ -78,22 +79,25 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
                     foundNextCorner = dungeon.IsCorner(currentTile) || currentTile.TileType == TileType.WallCross;
                 }
 
-                // If the corner is not in the list, add it
-                if (!currentCornerList.Any(t => t.X == currentTile.X && t.Y == currentTile.Y))
+                // Add the corner if it's not in the list
+                // or if it's a central wall cross corner and it's only in the list once
+                if (!currentCornerList.Any(t => t.Id == currentTile.Id) || currentTile.TileType == TileType.WallCross && currentCornerList.Count(t => t.Id == currentTile.Id) == 1)
                 {
                     currentCornerList.Add(currentTile);
                 } // If the corner is in the list, we found all corners of the current room or section
                 else
                 {
                     // Compare amount of corners in lists to see if we found them all
-                    foundAllCorners = allCorners.Count() == currentCornerList.Count();
+                    var foundCornerTiles = cornerLists.SelectMany(l => l.Select(t => t));
+                    foundAllCorners = !allCorners.Any(c => !foundCornerTiles.Any(t => t.Id == c.Id));
                     if (!foundAllCorners)
                     {
                         // If we didn't find all corners, pick from all corners a corner which is not in the ordered corner list
                         // This corner is a corner of a section not connected to the previous room, or we would have found it
                         cornerLists.Add(new List<ITile> {
-                            allCorners.First(t => !currentCornerList.Any(o => o.Id == t.Id))
+                            allCorners.First(t => !cornerLists.SelectMany(l => l.Select(t => t)).Any(c => c.Id == t.Id))
                         });
+                        clockwise = true;
                     }
                 }
             }
@@ -310,7 +314,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
                                     Joint = 1,
                                     NormalizeUV = true,
                                     Shadow = true,
-                                    NodeId = $"{22 + cornerLists.IndexOf(list)}",
+                                    NodeId = $"{22 + cornerLists.IndexOf(list)}", // TODO: Not sure about this id
                                     Portals = new List<object>()
                                 };
                             }).ToList(),
@@ -349,8 +353,6 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
                     }
                 }
             }, Formatting.Indented);
-
-            //return string.Join(", ", currentCornerList.Select(t => $"{t.X * 256}, {t.Y * 256}"));
         }
     }
 }

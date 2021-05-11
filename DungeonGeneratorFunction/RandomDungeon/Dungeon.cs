@@ -107,17 +107,17 @@ namespace PipeHow.DungeonMastery.RandomDungeon
                 dungeon.CreateRoom(wallTile.X, wallTile.Y, roomWidth, roomHeight, dungeon.Rooms.Count() + 1);
             }
 
-            //for (int i = 0; i < roomCount - 1; i++)
-            //{
-            //    int xPos = dungeon.Random.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
-            //    int yPos = dungeon.Random.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
-            //    int xSize = dungeon.Random.Next(3, originX / 4);
-            //    int ySize = dungeon.Random.Next(3, originY / 4);
-            //    // Create room with id 2 and onwards
-            //    dungeon.CreateRoom(xPos, yPos, xSize, ySize, i + 2);
-            //    //dungeon.Map[xPos + xSize / 2][yPos + ySize / 2].TileType = TileType.Door;
-            //    Console.WriteLine($"dungeon.CreateRoom({xPos}, {yPos}, {xSize}, {ySize},{i + 2});");
-            //}
+            // Add random rooms
+            for (int i = 0; i < roomCount - 1; i++)
+            {
+                int xPos = dungeon.Random.Next(-originX / 2 + 5, originX / 2 - 5) + originX;
+                int yPos = dungeon.Random.Next(-originY / 2 + 5, originY / 2 - 5) + originY;
+                int xSize = dungeon.Random.Next(3, originX / 4);
+                int ySize = dungeon.Random.Next(3, originY / 4);
+
+                dungeon.CreateRoom(xPos, yPos, xSize, ySize, dungeon.Rooms.Count() + 1);
+            }
+
             // After adding all rooms, make sure the non-walls in intersecting rooms are floor
             dungeon.FillCommonFloor();
 
@@ -500,25 +500,38 @@ namespace PipeHow.DungeonMastery.RandomDungeon
             highX += mapWhitespace;
             highY += mapWhitespace;
 
-            //// Add number grid for debugging
-            //// Copies of x loop
-            //sb.Append("   ");
-            //for (int j = lowX; j <= highX; j++)
-            //{
-            //    sb.Append(j);
-            //}
-            //sb.AppendLine("");
-            //sb.Append("   ");
-            //for (int j = lowX; j <= highX; j++)
-            //{
-            //    sb.Append("─");
-            //}
-            //sb.AppendLine("");
+            // Add number grid for debugging
+            // Copies of x loop
+            sb.Append("   ");
+            for (int j = lowX; j <= highX; j++)
+            {
+                if (j % 10 != 0)
+                {
+                    sb.Append(" ");
+                }
+                else
+                {
+                    sb.Append(j/10);
+                }
+            }
+            sb.AppendLine("");
+            sb.Append("   ");
+            for (int j = lowX; j <= highX; j++)
+            {
+                sb.Append(j % 10);
+            }
+            sb.AppendLine("");
+            sb.Append("   ");
+            for (int j = lowX; j <= highX; j++)
+            {
+                sb.Append("─");
+            }
+            sb.AppendLine("");
 
             // When printing we need to loop through y then x
             for (int i = lowY; i <= highY; i++)
             {
-                //sb.Append($"{i}|");
+                sb.Append($"{string.Format("{0:D2}", i)}|");
                 for (int j = lowX; j <= highX; j++)
                 {
                     sb.Append(Map[j][i].Symbol);
