@@ -73,13 +73,23 @@ namespace PipeHow.DungeonMastery
                 }
             }
 
+            bool trace = false;
+            if (req.Query.ContainsKey("trace"))
+            {
+                bool parsedTrace = bool.TryParse(req.Query["trace"], out trace);
+                if (!parsedTrace)
+                {
+                    return new BadRequestObjectResult("Trace was not provided as a boolean value!");
+                }
+            }
+
             // http://roguebasin.roguelikedevelopment.org/index.php?title=Dungeon-Building_Algorithm
             // TODO: Add configuration DI for other symbols etc
             IDungeon dungeon = Dungeon.CreateDungeon(width, height, roomMinSize, roomMaxSize, roomCount, seed);
 
             if (output == "string")
             {
-                string responseMessage = dungeon.ToString();
+                string responseMessage = dungeon.ToString(trace);
                 return new OkObjectResult(responseMessage);
             }
             else if (output == "dungeondraft")

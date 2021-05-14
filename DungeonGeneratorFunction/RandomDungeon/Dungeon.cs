@@ -31,6 +31,8 @@ namespace PipeHow.DungeonMastery.RandomDungeon
         public ITile Below(ITile tile);
         public bool IsCorner(ITile tile);
         public bool IsWall(ITile tile);
+
+        public string ToString(bool trace = false);
     }
 
     public class Dungeon : IDungeon
@@ -284,7 +286,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon
             }
 
             // TODO: Decide placement logic in IsViableCorridor. Only separate rooms, or allow intersection?
-            if (!IsViableCorridor(topLeft, bottomRight))
+            if (!IsWithinMap(topLeft, bottomRight))
             {
                 return false;
             }
@@ -471,7 +473,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon
             }
         }
 
-        public override string ToString()
+        public string ToString(bool trace = false)
         {
             // Get the top left and bottom right of map and print the lines between them to a string
             StringBuilder sb = new StringBuilder();
@@ -501,38 +503,44 @@ namespace PipeHow.DungeonMastery.RandomDungeon
             highX += mapWhitespace;
             highY += mapWhitespace;
 
-            // Add number grid for debugging
-            // Copies of x loop
-            sb.Append("   ");
-            for (int j = lowX; j <= highX; j++)
+            if (trace)
             {
-                if (j % 10 != 0)
+                // Add number grid for debugging
+                // Copies of x loop
+                sb.Append("   ");
+                for (int j = lowX; j <= highX; j++)
                 {
-                    sb.Append(" ");
+                    if (j % 10 != 0)
+                    {
+                        sb.Append(" ");
+                    }
+                    else
+                    {
+                        sb.Append(j / 10);
+                    }
                 }
-                else
+                sb.AppendLine("");
+                sb.Append("   ");
+                for (int j = lowX; j <= highX; j++)
                 {
-                    sb.Append(j/10);
+                    sb.Append(j % 10);
                 }
+                sb.AppendLine("");
+                sb.Append("   ");
+                for (int j = lowX; j <= highX; j++)
+                {
+                    sb.Append("─");
+                }
+                sb.AppendLine("");
             }
-            sb.AppendLine("");
-            sb.Append("   ");
-            for (int j = lowX; j <= highX; j++)
-            {
-                sb.Append(j % 10);
-            }
-            sb.AppendLine("");
-            sb.Append("   ");
-            for (int j = lowX; j <= highX; j++)
-            {
-                sb.Append("─");
-            }
-            sb.AppendLine("");
 
             // When printing we need to loop through y then x
             for (int i = lowY; i <= highY; i++)
             {
-                sb.Append($"{string.Format("{0:D2}", i)}|");
+                if (trace)
+                {
+                    sb.Append($"{string.Format("{0:D2}", i)}|");
+                }
                 for (int j = lowX; j <= highX; j++)
                 {
                     sb.Append(Map[j][i].Symbol);
@@ -545,8 +553,9 @@ namespace PipeHow.DungeonMastery.RandomDungeon
             return string.Join("", sb.ToString().Substring(0, sb.Length - seedString.Length - 2), seedString);
         }
 
-        private bool IsViableCorridor(ITile topLeft, ITile bottomRight)
+        private bool IsWithinMap(ITile topLeft, ITile bottomRight)
         {
+            // Including 1 square of whitespace around map
             if (bottomRight.X > Width - 1 ||
                 bottomRight.Y > Height - 1 ||
                 topLeft.X < 2 ||
