@@ -30,6 +30,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon
         public ITile Above(ITile tile);
         public ITile Below(ITile tile);
         public bool IsCorner(ITile tile);
+        public bool IsWall(ITile tile);
     }
 
     public class Dungeon : IDungeon
@@ -591,10 +592,6 @@ namespace PipeHow.DungeonMastery.RandomDungeon
         {
             return tile.ShouldBeType == TileType.Floor;
         }
-        internal bool IsWall(int x, int y)
-        {
-            return IsWall(Map[x][y]);
-        }
 
         internal int AdjacentTilesOf(ITile tile, TileType type)
         {
@@ -614,7 +611,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon
 
         public bool IsCorner(ITile tile)
         {
-            return tile.ShouldBeType.ToString().Contains("Corner");
+            return tile.TileType.ToString().Contains("Corner");
         }
         private bool IsCorner(int x, int y)
         {
@@ -629,9 +626,13 @@ namespace PipeHow.DungeonMastery.RandomDungeon
             return tile.ShouldBeType.ToString().Contains("Wall");
         }
 
-        internal bool IsWall(ITile tile)
+        public bool IsWall(ITile tile)
         {
             return tile.TileType.ToString().Contains("Wall");
+        }
+        private bool IsWall(int x, int y)
+        {
+            return IsWall(Map[x][y]);
         }
 
         private bool ShouldBeCrossCorner(ITile tile)

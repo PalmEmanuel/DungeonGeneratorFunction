@@ -298,8 +298,8 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
                             },
                             Tiles = new DungeondraftWorldLevelTiles
                             {
-                                Cells = string.Format("PoolIntArray( {0} )", string.Join(", ", dungeon.Map.SelectMany(r => r.Select(t => t.TileType == TileType.Floor ? 1 : -1)))),
-                                Colors = dungeon.Map.SelectMany(r => r.Select(t => t.TileType == TileType.Floor ? "ffd0d0d0" : "ffffffff")).ToList() // TODO: Floor does not appear where it should
+                                Cells = string.Format("PoolIntArray( {0} )", string.Join(", ", dungeon.Map.SelectMany(r => r.Select(t => t)).OrderBy(t => t.Y).ThenBy(t => t.X).Select(t => t.TileType == TileType.Floor || dungeon.IsWall(t) ? 1 : -1))),
+                                Colors = dungeon.Map.SelectMany(r => r.Select(t => t)).OrderBy(t => t.Y).ThenBy(t => t.X).Select(t => t.TileType == TileType.Floor || dungeon.IsWall(t) ? "ffd0d0d0" : "ffffffff").ToList() // TODO: Floor does not appear where it should
                             },
                             Patterns = new List<object>(),
                             Walls = cornerLists.Select(list =>
@@ -314,7 +314,7 @@ namespace PipeHow.DungeonMastery.RandomDungeon.Dungeondraft
                                     Joint = 1,
                                     NormalizeUV = true,
                                     Shadow = true,
-                                    NodeId = $"{22 + cornerLists.IndexOf(list)}", // TODO: Not sure about this id
+                                    NodeId = $"{23 + cornerLists.IndexOf(list)}", // TODO: Not sure about this id
                                     Portals = new List<object>()
                                 };
                             }).ToList(),
